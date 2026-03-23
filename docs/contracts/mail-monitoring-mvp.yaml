@@ -1,0 +1,447 @@
+feature: 邮件监控与结构化归档 MVP
+
+common:
+  base_path: /api/v1
+  response_wrapper:
+    code: integer
+    message: string
+    data: object
+  auth:
+    required: true
+    scheme: Bearer Token
+  date_format: ISO8601
+  pagination:
+    page: integer
+    page_size: integer
+    total: integer
+    items: array
+
+enums:
+  mailbox_status:
+    - enabled
+    - disabled
+  mailbox_protocol:
+    - imap
+  message_process_status:
+    - pending
+    - parsed
+    - archived
+    - failed
+  summary_schedule_type:
+    - daily
+  summary_send_status:
+    - pending
+    - success
+    - failed
+  extraction_status:
+    - pending
+    - success
+    - failed
+
+apis:
+  - name: 获取邮箱列表
+    endpoint: /mailboxes
+    method: GET
+    path_params: {}
+    query_params:
+      status:
+        type: string
+        required: false
+        enum: [enabled, disabled]
+        description: 按启用状态筛选
+      page:
+        type: integer
+        required: false
+        description: 页码，默认 1
+      page_size:
+        type: integer
+        required: false
+        description: 每页条数，默认 20
+    request_body: null
+    response_body:
+      items:
+        - id: string
+          name: string
+          protocol: imap
+          host: string
+          port: integer
+          username: string
+          status: enabled
+          created_at: string
+          updated_at: string
+      page: 1
+      page_size: 20
+      total: 0
+    field_meanings:
+      id: 邮箱配置主键
+      name: 邮箱展示名称
+      protocol: 接入协议
+      status: 邮箱启用状态
+    auth:
+      required: true
+      roles: [admin, operator]
+    idempotency: not_applicable
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限
+    backward_compatibility: 新增响应字段必须向后兼容，禁止删除既有字段
+
+  - name: 创建邮箱配置
+    endpoint: /mailboxes
+    method: POST
+    path_params: {}
+    query_params: {}
+    request_body:
+      name: string
+      protocol: imap
+      host: string
+      port: integer
+      username: string
+      password: string
+      folder: string
+      status: enabled
+    response_body:
+      id: string
+      name: string
+      status: enabled
+    field_meanings:
+      folder: 默认拉取的邮箱目录，如 INBOX
+      password: 请求中传递邮箱密码，服务端需加密后存储
+    auth:
+      required: true
+      roles: [admin]
+    idempotency: 客户端重复提交不保证幂等，服务端需校验同名或同账号重复配置
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40901
+        message: 邮箱配置冲突
+    backward_compatibility: 新增可选字段兼容旧客户端，请求必填字段变更需版本升级
+
+  - name: 更新邮箱配置
+    endpoint: /mailboxes/{mailbox_id}
+    method: PUT
+    path_params:
+      mailbox_id:
+        type: string
+        required: true
+        description: 邮箱配置 ID
+    query_params: {}
+    request_body:
+      name: string
+      host: string
+      port: integer
+      password: string
+      folder: string
+      status: enabled
+    response_body:
+      id: string
+      updated_at: string
+    field_meanings:
+      mailbox_id: 目标邮箱配置主键
+    auth:
+      required: true
+      roles: [admin]
+    idempotency: 同一请求体重复提交结果应一致
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40401
+        message: 邮箱配置不存在
+    backward_compatibility: 保持 endpoint 不变，新增可选字段兼容旧客户端
+
+  - name: 手动触发邮箱拉取
+    endpoint: /mailboxes/{mailbox_id}/pull
+    method: POST
+    path_params:
+      mailbox_id:
+        type: string
+        required: true
+    query_params: {}
+    request_body:
+      force_full_sync: false
+    response_body:
+      job_id: string
+      mailbox_id: string
+      status: pending
+    field_meanings:
+      force_full_sync: 是否强制执行全量同步，默认增量
+      job_id: 拉取任务 ID
+    auth:
+      required: true
+      roles: [admin, operator]
+    idempotency: 同一邮箱短时间内重复触发需防重或合并执行
+    error_codes:
+      - code: 40401
+        message: 邮箱配置不存在
+      - code: 40901
+        message: 当前已有进行中的拉取任务
+    backward_compatibility: 返回结构新增字段时需保持旧字段含义不变
+
+  - name: 获取归档列表
+    endpoint: /archives
+    method: GET
+    path_params: {}
+    query_params:
+      mailbox_id:
+        type: string
+        required: false
+        description: 按来源邮箱筛选
+      status:
+        type: string
+        required: false
+        enum: [pending, parsed, archived, failed]
+      start_time:
+        type: string
+        required: false
+      end_time:
+        type: string
+        required: false
+      keyword:
+        type: string
+        required: false
+      page:
+        type: integer
+        required: false
+      page_size:
+        type: integer
+        required: false
+    request_body: null
+    response_body:
+      items:
+        - archive_id: string
+          mailbox_id: string
+          message_id: string
+          subject: string
+          sender: string
+          received_at: string
+          status: archived
+          tags: []
+          summary: string
+          extraction_status: success
+          confidence: 0.92
+      page: 1
+      page_size: 20
+      total: 0
+    field_meanings:
+      archive_id: 归档记录 ID
+      message_id: 邮件唯一标识
+      tags: 规则命中标签列表
+      summary: AI 生成的结构化摘要
+      extraction_status: AI 提取状态
+      confidence: AI 提取结果置信度
+    auth:
+      required: true
+      roles: [admin, operator, viewer]
+    idempotency: not_applicable
+    error_codes:
+      - code: 40001
+        message: 参数错误
+    backward_compatibility: 新增筛选参数需保持旧参数可用
+
+  - name: 获取归档详情
+    endpoint: /archives/{archive_id}
+    method: GET
+    path_params:
+      archive_id:
+        type: string
+        required: true
+    query_params: {}
+    request_body: null
+    response_body:
+      archive_id: string
+      mailbox_id: string
+      message_id: string
+      subject: string
+      sender: string
+      recipients: []
+      received_at: string
+      body_text: string
+      body_html: string
+      extracted_fields: {}
+      tags: []
+      status: archived
+      extraction_status: success
+      confidence: 0.92
+      model_name: string
+      prompt_version: string
+      parse_error: null
+    field_meanings:
+      extracted_fields: 结构化提取结果
+      model_name: 执行本次提取的大模型名称
+      prompt_version: 提取 Prompt 版本
+      parse_error: 解析失败时的错误原因
+    auth:
+      required: true
+      roles: [admin, operator, viewer]
+    idempotency: not_applicable
+    error_codes:
+      - code: 40401
+        message: 归档记录不存在
+    backward_compatibility: 新增提取字段需保持旧客户端可忽略
+
+  - name: 获取汇总邮件配置列表
+    endpoint: /summary-configs
+    method: GET
+    path_params: {}
+    query_params: {}
+    request_body: null
+    response_body:
+      items:
+        - id: string
+          name: string
+          enabled: true
+          schedule_type: daily
+          recipient_emails: []
+          mailbox_ids: []
+          send_time: "09:00"
+      total: 0
+    field_meanings:
+      mailbox_ids: 汇总覆盖的邮箱范围，空数组表示全部邮箱
+      send_time: 每日或每周发送时间，使用系统时区
+    auth:
+      required: true
+      roles: [admin, operator]
+    idempotency: not_applicable
+    error_codes:
+      - code: 40101
+        message: 未登录
+    backward_compatibility: 新增配置项应保持默认值兼容
+
+  - name: 创建汇总邮件配置
+    endpoint: /summary-configs
+    method: POST
+    path_params: {}
+    query_params: {}
+    request_body:
+      name: string
+      enabled: true
+      schedule_type: daily
+      recipient_emails:
+        - ops@example.com
+      mailbox_ids:
+        - mailbox_001
+      include_statuses:
+        - archived
+        - failed
+      send_time: "09:00"
+      summary_mode: ai
+      empty_result_policy: skip
+    response_body:
+      id: string
+      enabled: true
+    field_meanings:
+      include_statuses: 汇总包含的归档状态
+      recipient_emails: 汇总邮件收件人列表
+      summary_mode: 首期固定为 ai，表示由大模型生成汇总正文
+      empty_result_policy: 无数据时的处理策略，skip 表示跳过发送
+    auth:
+      required: true
+      roles: [admin]
+    idempotency: 同名配置重复提交需按冲突处理或幂等返回
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40901
+        message: 汇总配置冲突
+    backward_compatibility: 请求新增可选字段兼容旧客户端
+
+  - name: 手动发送汇总邮件
+    endpoint: /summary-configs/{config_id}/send
+    method: POST
+    path_params:
+      config_id:
+        type: string
+        required: true
+    query_params: {}
+    request_body:
+      start_time: string
+      end_time: string
+    response_body:
+      send_id: string
+      status: pending
+    field_meanings:
+      start_time: 汇总统计开始时间
+      end_time: 汇总统计结束时间
+      send_id: 发送任务 ID
+    auth:
+      required: true
+      roles: [admin, operator]
+    idempotency: 相同配置和相同时间窗口重复触发时应避免重复发送或提供显式覆盖参数
+    error_codes:
+      - code: 40401
+        message: 汇总配置不存在
+      - code: 40901
+        message: 当前已有进行中的发送任务
+    backward_compatibility: 返回结构扩展时保持 send_id 和 status 不变
+
+  - name: 查询汇总邮件发送记录
+    endpoint: /summary-sends
+    method: GET
+    path_params: {}
+    query_params:
+      config_id:
+        type: string
+        required: false
+      status:
+        type: string
+        required: false
+        enum: [pending, success, failed]
+      page:
+        type: integer
+        required: false
+      page_size:
+        type: integer
+        required: false
+    request_body: null
+    response_body:
+      items:
+        - send_id: string
+          config_id: string
+          subject: string
+          recipient_count: 2
+          status: success
+          sent_at: string
+          error_message: null
+      page: 1
+      page_size: 20
+      total: 0
+    field_meanings:
+      recipient_count: 本次发送的收件人数
+      error_message: 发送失败时的错误信息
+    auth:
+      required: true
+      roles: [admin, operator, viewer]
+    idempotency: not_applicable
+    error_codes:
+      - code: 40001
+        message: 参数错误
+    backward_compatibility: 分页结构和主字段保持稳定
+
+error_codes:
+  - code: 40001
+    message: 参数错误
+  - code: 40101
+    message: 未登录
+  - code: 40301
+    message: 无权限
+  - code: 40401
+    message: 资源不存在
+  - code: 40901
+    message: 状态冲突
+  - code: 50001
+    message: 系统异常
+
+notes:
+  auth_requirement: 首期所有接口默认需要登录，角色模型后续细化
+  idempotency_rule: 邮件处理链路以 mailbox_id + internet_message_id 或 mailbox_id + provider_uid 作为核心幂等键
+  inbound_protocol: 首期仅支持 IMAP 拉取邮件
+  outbound_protocol: 汇总邮件统一使用 SMTP 发送
+  attachment_policy: 首期不解析附件，不暴露附件相关字段
+  ai_extraction: 首期提取与汇总正文生成均依赖外部大模型 API
+  compatibility: 契约确认后不得静默修改；如需变更，必须补充 diff、影响分析和兼容性说明
+  logging_requirement: 邮箱拉取、邮件解析、归档生成、汇总发送均需记录任务日志

@@ -1,0 +1,13 @@
+feature: 前端蓝白主题优化规范
+
+contract_change:
+  api_changed: false
+  reason: 本次仅调整前端视觉主题、布局和组件样式，不涉及任何接口字段、请求体、响应体或错误码变更
+
+compatibility:
+  backward_compatible: true
+  frontend_only: true
+  notes:
+    - 页面样式调整不应改变现有接口调用方式
+    - 页面样式调整不应改变现有字段含义和交互语义
+    - 如需新增前端本地主题变量，不得影响接口契约

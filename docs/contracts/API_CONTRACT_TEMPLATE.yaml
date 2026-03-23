@@ -1,0 +1,46 @@
+feature: <功能名称>
+
+endpoint:
+  method: POST
+  path: /api/example
+
+auth:
+  required: true
+  roles:
+    - admin
+
+request:
+  headers: {}
+  path_params: {}
+  query: {}
+  body: {}
+
+response:
+  success:
+    code: 0
+    message: success
+    data: {}
+
+errors:
+  - code: 40001
+    message: 参数错误
+  - code: 40101
+    message: 未登录
+  - code: 40301
+    message: 无权限
+  - code: 40401
+    message: 资源不存在
+  - code: 40901
+    message: 状态冲突
+  - code: 50001
+    message: 系统异常
+
+rules:
+  idempotency: required
+  compatibility: backward-compatible
+  logging: required
+
+notes:
+  enum_definitions: {}
+  date_format: ISO8601
+  null_handling: 明确区分 null、空字符串、缺失字段

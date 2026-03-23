@@ -1,0 +1,86 @@
+:root {
+  /* 主色 */
+  --primary-color: #1677FF;
+  --primary-hover: #4096FF;
+  --primary-active: #0958D9;
+
+  /* 辅助色 */
+  --secondary-blue: #69B1FF;
+  --light-blue-surface: #F0F7FF;
+  --accent-blue-border: #B7D7FF;
+
+  /* 中性色 */
+  --page-bg: #F5F9FF;
+  --container-bg: #FFFFFF;
+  --header-bg: #FFFFFF;
+  --sidebar-bg: #F7FBFF;
+  --border-color: #DCE9F7;
+  --divider-color: #EAF2FB;
+  --text-primary: #16324F;
+  --text-secondary: #5B7594;
+  --text-tertiary: #8AA0BA;
+
+  /* 状态色 */
+  --color-success: #31A46C;
+  --color-warning: #F5A623;
+  --color-error: #E14D4D;
+  --color-info: #1677FF;
+
+  /* 圆角与阴影 */
+  --border-radius-base: 12px;
+  --border-radius-large: 16px;
+  --border-radius-small: 10px;
+  --shadow-card: 0 10px 30px rgba(22, 50, 79, 0.06);
+  --shadow-hover: 0 14px 36px rgba(22, 50, 79, 0.10);
+}
+
+body {
+  margin: 0;
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  background-color: var(--page-bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+}
+
+.page-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.filter-card {
+  margin-bottom: 16px;
+  border-radius: var(--border-radius-base) !important;
+  box-shadow: var(--shadow-card) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.main-card {
+  border-radius: var(--border-radius-base) !important;
+  box-shadow: var(--shadow-card) !important;
+  border: 1px solid var(--border-color) !important;
+}

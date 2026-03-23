@@ -1,0 +1,456 @@
+feature: A 类客户关键失败邮件捕获层试点
+
+common:
+  base_path: /api/v1
+  response_wrapper:
+    code: integer
+    message: string
+    data: object
+  auth:
+    required: true
+    scheme: Bearer Token
+  date_format: ISO8601
+  pagination:
+    page: integer
+    page_size: integer
+    total: integer
+    items: array
+
+enums:
+  user_role:
+    - admin
+    - operator
+  failure_queue_status:
+    - new
+    - acknowledged
+    - resolved
+  capture_run_status:
+    - pending
+    - running
+    - success
+    - failed
+  rule_status:
+    - enabled
+    - disabled
+  customer_scope_type:
+    - explicit_list
+    - domain_mapping
+
+apis:
+  - name: 最小登录
+    endpoint: /auth/login
+    method: POST
+    path_params: {}
+    query_params: {}
+    request_body:
+      username: string
+      password: string
+    response_body:
+      access_token: string
+      token_type: bearer
+      expires_in: 86400
+      user:
+        id: string
+        username: string
+        display_name: string
+        role: admin
+        mailbox_scope_ids:
+          - mailbox_001
+    field_meanings:
+      access_token: 登录成功后返回的 Bearer Token
+      expires_in: token 剩余有效秒数
+      mailbox_scope_ids: 当前用户可访问的试点邮箱范围，admin 可返回全部试点邮箱
+    auth:
+      required: false
+      roles: []
+    idempotency: not_applicable
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 用户名或密码错误
+    backward_compatibility: 后续仅允许新增可选字段，禁止删除既有登录返回字段
+
+  - name: 获取当前登录用户信息
+    endpoint: /auth/me
+    method: GET
+    path_params: {}
+    query_params: {}
+    request_body: null
+    response_body:
+      id: string
+      username: string
+      display_name: string
+      role: operator
+      mailbox_scope_ids:
+        - mailbox_001
+    field_meanings:
+      role: 当前用户角色，仅支持 admin/operator
+      mailbox_scope_ids: 当前用户可访问的试点邮箱范围
+    auth:
+      required: true
+      roles: [admin, operator]
+    idempotency: not_applicable
+    error_codes:
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限
+    backward_compatibility: 新增可选字段兼容旧客户端，既有字段含义保持不变
+
+  - name: 获取失败邮件队列列表
+    endpoint: /failure-queue
+    method: GET
+    path_params: {}
+    query_params:
+      status:
+        type: string
+        required: false
+        enum: [new, acknowledged, resolved]
+        description: 按失败队列状态筛选
+      mailbox_id:
+        type: string
+        required: false
+        description: 按试点邮箱筛选，仅允许查询当前用户可访问邮箱
+      keyword:
+        type: string
+        required: false
+        description: 按主题、客户名、任务标识模糊搜索
+      start_time:
+        type: string
+        required: false
+        description: 接收时间开始，ISO8601
+      end_time:
+        type: string
+        required: false
+        description: 接收时间结束，ISO8601
+      page:
+        type: integer
+        required: false
+        description: 页码，默认 1
+      page_size:
+        type: integer
+        required: false
+        description: 每页条数，默认 20
+    request_body: null
+    response_body:
+      items:
+        - queue_id: string
+          mailbox_id: string
+          source_message_id: string
+          failure_rule_key: batch_task_failed
+          customer_name: 示例客户
+          task_identifier: TASK-20260323-001
+          subject: 批量任务执行失败通知
+          sender: system@example.com
+          received_at: string
+          status: new
+          first_captured_at: string
+          last_seen_at: string
+      page: 1
+      page_size: 20
+      total: 0
+    field_meanings:
+      queue_id: 失败邮件队列记录主键
+      source_message_id: 原始邮件唯一标识
+      failure_rule_key: 命中规则标识
+      task_identifier: 提取出的批量任务标识，允许为空
+      first_captured_at: 首次进入失败队列时间
+      last_seen_at: 最近一次被扫描命中的时间
+    auth:
+      required: true
+      roles: [admin, operator]
+    idempotency: not_applicable
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限访问该邮箱范围
+    backward_compatibility: 新增可选筛选项和响应字段需向后兼容，既有分页结构不可破坏
+
+  - name: 获取失败邮件队列详情
+    endpoint: /failure-queue/{queue_id}
+    method: GET
+    path_params:
+      queue_id:
+        type: string
+        required: true
+        description: 失败邮件队列记录 ID
+    query_params: {}
+    request_body: null
+    response_body:
+      queue_id: string
+      mailbox_id: string
+      source_message_id: string
+      provider_uid: string
+      failure_rule_key: batch_task_failed
+      customer_name: 示例客户
+      task_identifier: TASK-20260323-001
+      subject: 批量任务执行失败通知
+      sender: system@example.com
+      received_at: string
+      status: new
+      acknowledged_at: null
+      acknowledged_by: null
+      resolved_at: null
+      resolved_by: null
+      body_text: string
+      body_html: string
+      matched_snapshot:
+        matched_fields:
+          subject_keywords:
+            - 执行失败
+          sender_patterns:
+            - system@example.com
+        extracted_fields:
+          customer_name: 示例客户
+          task_identifier: TASK-20260323-001
+          failure_reason: 超时
+    field_meanings:
+      provider_uid: 邮箱服务商内部 UID，用于幂等和追踪
+      matched_snapshot: 本次命中时的规则快照和提取结果，便于解释为什么被抓入队列
+      acknowledged_by: 首次认领该记录的用户 ID
+      resolved_by: 标记为已处理的用户 ID
+    auth:
+      required: true
+      roles: [admin, operator]
+    idempotency: not_applicable
+    error_codes:
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限访问该邮箱范围
+      - code: 40401
+        message: 失败邮件队列记录不存在
+    backward_compatibility: 允许新增 matched_snapshot 子字段，但现有字段保持稳定
+
+  - name: 更新失败邮件队列状态
+    endpoint: /failure-queue/{queue_id}/status
+    method: PATCH
+    path_params:
+      queue_id:
+        type: string
+        required: true
+        description: 失败邮件队列记录 ID
+    query_params: {}
+    request_body:
+      status: acknowledged
+    response_body:
+      queue_id: string
+      status: acknowledged
+      acknowledged_at: string
+      acknowledged_by: user_001
+      resolved_at: null
+      resolved_by: null
+      updated_at: string
+    field_meanings:
+      status: 目标状态，仅支持合法流转
+      updated_at: 本次状态变更后的更新时间
+    auth:
+      required: true
+      roles: [admin, operator]
+    idempotency: 同一 queue_id 对同一目标状态重复提交应返回一致结果
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限访问该邮箱范围
+      - code: 40401
+        message: 失败邮件队列记录不存在
+      - code: 40901
+        message: 状态流转冲突
+    backward_compatibility: 后续如新增状态，必须保持现有三态语义不变并说明兼容策略
+
+  - name: 手动补跑失败邮件捕获任务
+    endpoint: /failure-capture-runs/replay
+    method: POST
+    path_params: {}
+    query_params: {}
+    request_body:
+      mailbox_ids:
+        - mailbox_001
+      lookback_minutes: 120
+    response_body:
+      run_id: string
+      status: pending
+      mailbox_ids:
+        - mailbox_001
+    field_meanings:
+      mailbox_ids: 本次手动补跑的邮箱范围，必须是当前用户可访问的试点邮箱子集
+      lookback_minutes: 向前回溯扫描分钟数，默认 120，最大 1440
+      run_id: 后台任务运行 ID
+    auth:
+      required: true
+      roles: [admin, operator]
+    idempotency: 同一邮箱集合和同一回溯窗口在短时间内重复提交应合并执行或返回同一进行中任务
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限访问该邮箱范围
+      - code: 40901
+        message: 当前已有进行中的补跑任务
+    backward_compatibility: 返回结构可新增字段，但 run_id 和 status 含义不得改变
+
+  - name: 获取失败邮件识别规则列表
+    endpoint: /failure-rules
+    method: GET
+    path_params: {}
+    query_params:
+      status:
+        type: string
+        required: false
+        enum: [enabled, disabled]
+        description: 按规则状态筛选
+    request_body: null
+    response_body:
+      items:
+        - rule_id: string
+          rule_name: A类客户批量任务失败规则
+          failure_rule_key: batch_task_failed
+          status: enabled
+          customer_scope_type: explicit_list
+          mailbox_ids:
+            - mailbox_001
+          updated_at: string
+      total: 0
+    field_meanings:
+      rule_id: 规则主键
+      rule_name: 规则展示名称
+      customer_scope_type: 客户范围定义方式
+      mailbox_ids: 该规则适用的试点邮箱范围
+    auth:
+      required: true
+      roles: [admin]
+    idempotency: not_applicable
+    error_codes:
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限
+    backward_compatibility: 新增可选字段兼容旧客户端，既有规则主字段保持稳定
+
+  - name: 创建失败邮件识别规则
+    endpoint: /failure-rules
+    method: POST
+    path_params: {}
+    query_params: {}
+    request_body:
+      rule_name: A类客户批量任务失败规则
+      failure_rule_key: batch_task_failed
+      status: enabled
+      customer_scope_type: explicit_list
+      customer_match_config:
+        customers:
+          - 示例客户
+      mailbox_ids:
+        - mailbox_001
+      sender_patterns:
+        - system@example.com
+      subject_patterns:
+        - 批量任务执行失败
+      body_patterns:
+        - 失败
+        - 超时
+      priority: 100
+    response_body:
+      rule_id: string
+      rule_name: A类客户批量任务失败规则
+      status: enabled
+      updated_at: string
+    field_meanings:
+      customer_match_config: A 类客户匹配配置，结构由 customer_scope_type 决定
+      sender_patterns: 发件人匹配规则列表
+      subject_patterns: 主题匹配关键字或模式列表
+      body_patterns: 正文匹配关键字或模式列表
+      priority: 多规则命中时的优先级，数值越大优先级越高
+    auth:
+      required: true
+      roles: [admin]
+    idempotency: 同一 failure_rule_key 和同一适用范围重复提交应按冲突处理
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限
+      - code: 40901
+        message: 规则配置冲突
+    backward_compatibility: 新增可选字段向后兼容，必填字段变化需版本升级
+
+  - name: 更新失败邮件识别规则
+    endpoint: /failure-rules/{rule_id}
+    method: PUT
+    path_params:
+      rule_id:
+        type: string
+        required: true
+        description: 规则主键 ID
+    query_params: {}
+    request_body:
+      rule_name: A类客户批量任务失败规则
+      status: enabled
+      customer_scope_type: explicit_list
+      customer_match_config:
+        customers:
+          - 示例客户
+      mailbox_ids:
+        - mailbox_001
+      sender_patterns:
+        - system@example.com
+      subject_patterns:
+        - 批量任务执行失败
+      body_patterns:
+        - 失败
+      priority: 100
+    response_body:
+      rule_id: string
+      status: enabled
+      updated_at: string
+    field_meanings:
+      rule_id: 待更新的规则 ID
+    auth:
+      required: true
+      roles: [admin]
+    idempotency: 同一规则同一请求体重复提交结果应一致
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限
+      - code: 40401
+        message: 规则不存在
+      - code: 40901
+        message: 规则配置冲突
+    backward_compatibility: 既有 endpoint 保持稳定，新增可选字段兼容旧客户端
+
+error_codes:
+  - code: 40001
+    message: 参数错误
+  - code: 40101
+    message: 未登录
+  - code: 40301
+    message: 无权限
+  - code: 40401
+    message: 资源不存在
+  - code: 40901
+    message: 状态冲突
+  - code: 50001
+    message: 系统异常
+
+notes:
+  scope_statement: 本契约仅覆盖 A 类客户关键失败邮件捕获层试点，不覆盖完整邮件平台
+  queue_idempotency_rule: 失败邮件队列以 mailbox_id + internet_message_id/provider_uid + failure_rule_key 作为核心幂等维度
+  login_scope_rule: operator 只能访问其 mailbox_scope_ids 范围内数据，admin 可访问全部试点邮箱
+  reminder_strategy: 即时提醒采用短窗口聚合发送，另保留固定频率汇总邮件
+  contract_change_policy: 本文件为新增试点契约，不修改既有 mail-monitoring-mvp.yaml；若后续需调整已确认字段，必须补充 diff、影响分析与兼容性说明
+  compatibility: 所有新增字段必须向后兼容，前端可忽略未知字段，后端不得静默删除既有字段

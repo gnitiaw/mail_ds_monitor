@@ -1,0 +1,48 @@
+[project]
+name = "mail-ds-monitor-backend"
+version = "0.1.0"
+description = "Backend service for mail monitoring, AI extraction and daily summary delivery."
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.116.0,<1.0.0",
+  "uvicorn[standard]>=0.35.0,<1.0.0",
+  "pydantic-settings>=2.10.0,<3.0.0",
+  "sqlalchemy>=2.0.40,<3.0.0",
+  "pymysql>=1.1.1,<2.0.0",
+  "python-dotenv>=1.1.0,<2.0.0",
+  "cryptography>=42.0.0,<44.0.0",
+  "httpx>=0.27.0,<1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0,<9.0.0",
+  "pytest-asyncio>=0.23.0,<1.0.0",
+  "ruff>=0.4.0,<1.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.uvicorn]
+factory = false
+host = "0.0.0.0"
+port = 8000
+
+[tool.pytest.ini_options]
+testpaths = ["app/tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]

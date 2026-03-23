@@ -1,0 +1,9 @@
+back_end/.venv/
+back_end/.claude/
+back_end/*.egg-info/
+front_end/node_modules/
+front_end/dist/
+__pycache__/
+.pytest_cache/
+.env
+*.pyc
