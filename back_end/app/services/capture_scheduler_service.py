@@ -225,6 +225,71 @@ class CaptureSchedulerService:
         }
 
     @classmethod
+    def scan_existing_messages(
+        cls,
+        db: Session,
+        mailbox_ids: list[str],
+        lookback_minutes: int,
+    ) -> dict:
+        """仅扫描已拉取的现有邮件，不重复执行 IMAP 拉取。"""
+        scanned_count = 0
+        matched_count = 0
+        deduped_count = 0
+        error_mailboxes = []
+
+        rules = list(db.scalars(
+            select(FailureCaptureRule)
+            .where(FailureCaptureRule.status == RuleStatus.ENABLED.value)
+            .order_by(FailureCaptureRule.priority.desc())
+        ).all())
+
+        since_time = datetime.now(timezone.utc) - timedelta(minutes=lookback_minutes)
+
+        for mailbox_id in mailbox_ids:
+            mailbox = db.get(Mailbox, mailbox_id)
+            if not mailbox or mailbox.status != "enabled":
+                error_mailboxes.append({"mailbox_id": mailbox_id, "error": "Mailbox not found or disabled"})
+                continue
+
+            try:
+                messages = list(db.scalars(
+                    select(MailMessage)
+                    .where(
+                        MailMessage.mailbox_id == mailbox_id,
+                        MailMessage.received_at >= since_time,
+                    )
+                    .order_by(MailMessage.received_at.desc())
+                ).all())
+
+                scanned_count += len(messages)
+
+                for msg in messages:
+                    matched = cls._process_mail_against_rules(
+                        db=db,
+                        mailbox_id=mailbox_id,
+                        message=msg,
+                        rules=rules,
+                    )
+                    if matched is None:
+                        continue
+                    if matched.get("deduped"):
+                        deduped_count += 1
+                    else:
+                        matched_count += 1
+
+                db.commit()
+            except Exception as e:
+                logger.exception(f"Failed to scan existing messages for mailbox {mailbox_id}: {e}")
+                error_mailboxes.append({"mailbox_id": mailbox_id, "error": str(e)})
+
+        return {
+            "scanned_count": scanned_count,
+            "matched_count": matched_count,
+            "deduped_count": deduped_count,
+            "error_mailboxes": error_mailboxes,
+        }
+
+    @classmethod
     def _process_mail_against_rules(
         cls,
         db: Session,

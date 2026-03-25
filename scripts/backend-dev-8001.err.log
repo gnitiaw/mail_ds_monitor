@@ -1,0 +1,31 @@
+INFO:     Started server process [40320]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+Unexpected SMTP error: [Errno 11001] getaddrinfo failed
+Traceback (most recent call last):
+  File "D:\Projects\codex\mail_ds_monitor\back_end\app\services\smtp_service.py", line 87, in send_email
+    smtp_client = smtplib.SMTP(
+        settings.smtp_host,
+        settings.smtp_port,
+        timeout=settings.smtp_timeout_seconds,
+    )
+  File "C:\Users\sunrui\AppData\Roaming\uv\python\cpython-3.14.3-windows-x86_64-none\Lib\smtplib.py", line 262, in __init__
+    (code, msg) = self.connect(host, port)
+                  ~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\sunrui\AppData\Roaming\uv\python\cpython-3.14.3-windows-x86_64-none\Lib\smtplib.py", line 348, in connect
+    self.sock = self._get_socket(host, port, self.timeout)
+                ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sunrui\AppData\Roaming\uv\python\cpython-3.14.3-windows-x86_64-none\Lib\smtplib.py", line 319, in _get_socket
+    return socket.create_connection((host, port), timeout,
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+                                    self.source_address)
+                                    ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sunrui\AppData\Roaming\uv\python\cpython-3.14.3-windows-x86_64-none\Lib\socket.py", line 846, in create_connection
+    for res in getaddrinfo(host, port, 0, SOCK_STREAM):
+               ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sunrui\AppData\Roaming\uv\python\cpython-3.14.3-windows-x86_64-none\Lib\socket.py", line 983, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno 11001] getaddrinfo failed
+SMTP error sending summary for config 83e233d4-cf4f-4378-a5e3-cd765b6816f3: Unexpected SMTP error: [Errno 11001] getaddrinfo failed

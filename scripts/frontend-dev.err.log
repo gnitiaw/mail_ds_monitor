@@ -1,0 +1,74 @@
+[2m17:26:16[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Card] `bodyStyle` is deprecated. Please use `styles.body` instead.
+[2m17:26:26[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+[2m17:26:31[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Modal] `destroyOnClose` is deprecated. Please use `destroyOnHidden` instead.
+[2m17:29:14[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Card] `bodyStyle` is deprecated. Please use `styles.body` instead.
+[2m08:47:06[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+[2m08:47:10[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Modal] `destroyOnClose` is deprecated. Please use `destroyOnHidden` instead.
+[2m12:45:46[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Modal] `destroyOnClose` is deprecated. Please use `destroyOnHidden` instead.
+[2m12:45:58[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+[2m14:23:53[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+[2m14:23:53[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Card] `bodyStyle` is deprecated. Please use `styles.body` instead.
+[2m14:23:54[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Card] `bodyStyle` is deprecated. Please use `styles.body` instead.
+[2m14:23:59[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+[2m14:24:03[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Modal] `destroyOnClose` is deprecated. Please use `destroyOnHidden` instead.
+[2m14:24:13[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Alert] `message` is deprecated. Please use `title` instead.
+[2m14:25:55[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Space] `direction` is deprecated. Please use `orientation` instead.
+[2m16:19:19[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/mailboxes?page=1&page_size=20[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+[2m16:19:19[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/mailboxes?page=1&page_size=20[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+[2m16:19:20[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/mailboxes?page=1&page_size=100[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+[2m16:19:20[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/mail-messages?page=1&page_size=20[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+[2m16:19:20[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/mailboxes?page=1&page_size=100[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+[2m16:19:20[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/v1/mail-messages?page=1&page_size=20[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+[2m16:19:20[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled rejection] [1mAxiosError[22m: Request failed with status code 502
+[39m > settle node_modules/axios/lib/core/settle.js:20:6
+ > XMLHttpRequest.onloadend node_modules/axios/lib/adapters/xhr.js:62:8
+ > Axios$1.request node_modules/axios/lib/core/Axios.js:46:40
+
+[2m16:19:20[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled rejection] [1mAxiosError[22m: Request failed with status code 502
+[39m > settle node_modules/axios/lib/core/settle.js:20:6
+ > XMLHttpRequest.onloadend node_modules/axios/lib/adapters/xhr.js:62:8
+ > Axios$1.request node_modules/axios/lib/core/Axios.js:46:40
+
+[2m16:30:45[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+[2m16:30:45[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Card] `bodyStyle` is deprecated. Please use `styles.body` instead.
+[2m16:30:45[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Card] `bodyStyle` is deprecated. Please use `styles.body` instead.
+[2m16:30:53[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+[2m16:30:54[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Modal] `destroyOnClose` is deprecated. Please use `destroyOnHidden` instead.
+[2m16:31:06[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Space] `direction` is deprecated. Please use `orientation` instead.
+[2m11:14:01[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Space] `direction` is deprecated. Please use `orientation` instead.
+[2m12:48:10[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Card] `bodyStyle` is deprecated. Please use `styles.body` instead.
+[2m12:48:19[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+[2m12:48:24[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Space] `direction` is deprecated. Please use `orientation` instead.
+[2m12:48:29[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Space] `direction` is deprecated. Please use `orientation` instead.
+[2m12:48:41[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Modal] `destroyOnClose` is deprecated. Please use `destroyOnHidden` instead.
+[2m12:48:52[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Tabs] `Tabs.TabPane` is deprecated. Please use `items` instead.
+[2m12:49:06[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: Instance created by `useForm` is not connected to any Form element. Forget to pass `form` prop?
+[2m12:49:48[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled rejection] [1mAxiosError[22m: Request failed with status code 500
+[39m > settle node_modules/axios/lib/core/settle.js:20:6
+ > XMLHttpRequest.onloadend node_modules/axios/lib/adapters/xhr.js:62:8
+ > Axios$1.request node_modules/axios/lib/core/Axios.js:46:40
+
+[2m12:49:48[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled rejection] [1mAxiosError[22m: Request failed with status code 500
+[39m > settle node_modules/axios/lib/core/settle.js:20:6
+ > XMLHttpRequest.onloadend node_modules/axios/lib/adapters/xhr.js:62:8
+ > Axios$1.request node_modules/axios/lib/core/Axios.js:46:40
+
+^C

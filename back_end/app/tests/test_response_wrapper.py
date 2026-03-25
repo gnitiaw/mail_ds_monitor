@@ -4,13 +4,42 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from app.models.enums import UserRole
+from app.models.user import User
+from app.services.auth_service import AuthService
+
 
 class TestSuccessResponseWrapper:
     """成功响应结构测试类。"""
 
-    def test_mailbox_list_response_structure(self, client: TestClient, db_session: Session):
+    @pytest.fixture
+    def setup_admin(self, db_session: Session):
+        """设置 admin 用户用于测试。"""
+        admin = User(
+            username="admin_wrapper_test",
+            password_hash=AuthService.hash_password("password123"),
+            display_name="Admin Wrapper Test",
+            role=UserRole.ADMIN.value,
+        )
+        db_session.add(admin)
+        db_session.commit()
+        return admin
+
+    def _get_admin_token(self, client: TestClient) -> str:
+        """获取 admin token。"""
+        login_response = client.post(
+            "/api/v1/auth/login",
+            json={"username": "admin_wrapper_test", "password": "password123"},
+        )
+        return login_response.json()["data"]["access_token"]
+
+    def test_mailbox_list_response_structure(self, client: TestClient, db_session: Session, setup_admin):
         """测试邮箱列表响应结构。"""
-        response = client.get("/api/v1/mailboxes")
+        token = self._get_admin_token(client)
+        response = client.get(
+            "/api/v1/mailboxes",
+            headers={"Authorization": f"Bearer {token}"},
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -28,8 +57,9 @@ class TestSuccessResponseWrapper:
         assert "page_size" in data["data"]
         assert "total" in data["data"]
 
-    def test_mailbox_create_response_structure(self, client: TestClient, db_session: Session):
+    def test_mailbox_create_response_structure(self, client: TestClient, db_session: Session, setup_admin):
         """测试邮箱创建响应结构。"""
+        token = self._get_admin_token(client)
         payload = {
             "name": "测试邮箱",
             "host": "imap.example.com",
@@ -40,7 +70,11 @@ class TestSuccessResponseWrapper:
             "status": "enabled",
         }
 
-        response = client.post("/api/v1/mailboxes", json=payload)
+        response = client.post(
+            "/api/v1/mailboxes",
+            json=payload,
+            headers={"Authorization": f"Bearer {token}"},
+        )
 
         assert response.status_code == 201
         data = response.json()
@@ -56,9 +90,13 @@ class TestSuccessResponseWrapper:
         assert "name" in data["data"]
         assert data["data"]["name"] == "测试邮箱"
 
-    def test_archive_list_response_structure(self, client: TestClient, db_session: Session):
+    def test_archive_list_response_structure(self, client: TestClient, db_session: Session, setup_admin):
         """测试归档列表响应结构。"""
-        response = client.get("/api/v1/archives")
+        token = self._get_admin_token(client)
+        response = client.get(
+            "/api/v1/archives",
+            headers={"Authorization": f"Bearer {token}"},
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -69,9 +107,13 @@ class TestSuccessResponseWrapper:
         assert "data" in data
         assert data["code"] == 0
 
-    def test_summary_config_list_response_structure(self, client: TestClient, db_session: Session):
+    def test_summary_config_list_response_structure(self, client: TestClient, db_session: Session, setup_admin):
         """测试汇总配置列表响应结构。"""
-        response = client.get("/api/v1/summary-configs")
+        token = self._get_admin_token(client)
+        response = client.get(
+            "/api/v1/summary-configs",
+            headers={"Authorization": f"Bearer {token}"},
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -86,8 +128,30 @@ class TestSuccessResponseWrapper:
 class TestErrorResponseWrapper:
     """错误响应结构测试类 - 验证所有错误都返回统一结构。"""
 
-    def test_duplicate_mailbox_error_response(self, client: TestClient, db_session: Session):
+    @pytest.fixture
+    def setup_admin(self, db_session: Session):
+        """设置 admin 用户用于测试。"""
+        admin = User(
+            username="admin_error_wrapper",
+            password_hash=AuthService.hash_password("password123"),
+            display_name="Admin Error Wrapper",
+            role=UserRole.ADMIN.value,
+        )
+        db_session.add(admin)
+        db_session.commit()
+        return admin
+
+    def _get_admin_token(self, client: TestClient) -> str:
+        """获取 admin token。"""
+        login_response = client.post(
+            "/api/v1/auth/login",
+            json={"username": "admin_error_wrapper", "password": "password123"},
+        )
+        return login_response.json()["data"]["access_token"]
+
+    def test_duplicate_mailbox_error_response(self, client: TestClient, db_session: Session, setup_admin):
         """测试重复创建邮箱的错误响应结构 - 应返回 40901。"""
+        token = self._get_admin_token(client)
         payload = {
             "name": "重复邮箱",
             "host": "imap.example.com",
@@ -99,11 +163,19 @@ class TestErrorResponseWrapper:
         }
 
         # 第一次创建成功
-        response1 = client.post("/api/v1/mailboxes", json=payload)
+        response1 = client.post(
+            "/api/v1/mailboxes",
+            json=payload,
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert response1.status_code == 201
 
         # 第二次创建应返回错误
-        response2 = client.post("/api/v1/mailboxes", json=payload)
+        response2 = client.post(
+            "/api/v1/mailboxes",
+            json=payload,
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert response2.status_code == 409
 
         # 验证错误响应结构
@@ -114,11 +186,13 @@ class TestErrorResponseWrapper:
         assert data["code"] == 40901
         assert "detail" not in data  # 不应包含 detail 字段
 
-    def test_not_found_mailbox_error_response(self, client: TestClient, db_session: Session):
+    def test_not_found_mailbox_error_response(self, client: TestClient, db_session: Session, setup_admin):
         """测试不存在的邮箱错误响应结构 - 应返回 40401。"""
+        token = self._get_admin_token(client)
         response = client.put(
             "/api/v1/mailboxes/nonexistent-id",
             json={"name": "测试"},
+            headers={"Authorization": f"Bearer {token}"},
         )
 
         assert response.status_code == 404
@@ -131,9 +205,13 @@ class TestErrorResponseWrapper:
         assert data["code"] == 40401
         assert "detail" not in data
 
-    def test_not_found_archive_error_response(self, client: TestClient, db_session: Session):
+    def test_not_found_archive_error_response(self, client: TestClient, db_session: Session, setup_admin):
         """测试不存在的归档错误响应结构 - 应返回 40401。"""
-        response = client.get("/api/v1/archives/nonexistent-id")
+        token = self._get_admin_token(client)
+        response = client.get(
+            "/api/v1/archives/nonexistent-id",
+            headers={"Authorization": f"Bearer {token}"},
+        )
 
         assert response.status_code == 404
 
@@ -145,8 +223,9 @@ class TestErrorResponseWrapper:
         assert data["code"] == 40401
         assert "detail" not in data
 
-    def test_disabled_mailbox_pull_error_response(self, client: TestClient, db_session: Session):
+    def test_disabled_mailbox_pull_error_response(self, client: TestClient, db_session: Session, setup_admin):
         """测试禁用邮箱拉取的错误响应结构 - 应返回 40901。"""
+        token = self._get_admin_token(client)
         # 创建禁用邮箱
         payload = {
             "name": "禁用邮箱",
@@ -157,13 +236,18 @@ class TestErrorResponseWrapper:
             "folder": "INBOX",
             "status": "disabled",
         }
-        create_response = client.post("/api/v1/mailboxes", json=payload)
+        create_response = client.post(
+            "/api/v1/mailboxes",
+            json=payload,
+            headers={"Authorization": f"Bearer {token}"},
+        )
         mailbox_id = create_response.json()["data"]["id"]
 
         # 尝试拉取
         response = client.post(
             f"/api/v1/mailboxes/{mailbox_id}/pull",
             json={"force_full_sync": False},
+            headers={"Authorization": f"Bearer {token}"},
         )
 
         assert response.status_code == 409
@@ -176,10 +260,11 @@ class TestErrorResponseWrapper:
         assert data["code"] == 40901
         assert "detail" not in data
 
-    def test_disabled_summary_send_error_response(self, client: TestClient, db_session: Session):
+    def test_disabled_summary_send_error_response(self, client: TestClient, db_session: Session, setup_admin):
         """测试禁用汇总配置发送的错误响应结构 - 应返回 40901。"""
         from app.models.summary import SummaryConfig
 
+        token = self._get_admin_token(client)
         config = SummaryConfig(
             name="禁用配置",
             enabled=False,
@@ -196,6 +281,7 @@ class TestErrorResponseWrapper:
                 "start_time": "2024-01-01T00:00:00Z",
                 "end_time": "2024-01-01T23:59:59Z",
             },
+            headers={"Authorization": f"Bearer {token}"},
         )
 
         assert response.status_code == 409
@@ -208,10 +294,11 @@ class TestErrorResponseWrapper:
         assert data["code"] == 40901
         assert "detail" not in data
 
-    def test_invalid_time_format_error_response(self, client: TestClient, db_session: Session):
+    def test_invalid_time_format_error_response(self, client: TestClient, db_session: Session, setup_admin):
         """测试非法时间格式的错误响应结构 - 应返回 40001。"""
         from app.models.summary import SummaryConfig
 
+        token = self._get_admin_token(client)
         config = SummaryConfig(
             name="时间测试配置",
             enabled=True,
@@ -228,6 +315,7 @@ class TestErrorResponseWrapper:
                 "start_time": "invalid-time",
                 "end_time": "2024-01-01T23:59:59Z",
             },
+            headers={"Authorization": f"Bearer {token}"},
         )
 
         assert response.status_code == 400
@@ -237,18 +325,23 @@ class TestErrorResponseWrapper:
         assert "code" in data
         assert "message" in data
         assert "data" in data
-        assert data["code"] == 40001
+        assert data["code"] == 40001  # 参数错误
         assert "detail" not in data
 
-    def test_validation_error_response(self, client: TestClient, db_session: Session):
+    def test_validation_error_response(self, client: TestClient, db_session: Session, setup_admin):
         """测试请求验证错误的响应结构 - 应返回 40001。"""
+        token = self._get_admin_token(client)
         # 缺少必填字段
         payload = {
             "name": "测试邮箱",
             # 缺少 host, port, username, password
         }
 
-        response = client.post("/api/v1/mailboxes", json=payload)
+        response = client.post(
+            "/api/v1/mailboxes",
+            json=payload,
+            headers={"Authorization": f"Bearer {token}"},
+        )
 
         assert response.status_code == 422
 
@@ -260,14 +353,16 @@ class TestErrorResponseWrapper:
         assert data["code"] == 40001  # 验证错误映射到参数错误
         assert "detail" not in data
 
-    def test_not_found_summary_config_error_response(self, client: TestClient, db_session: Session):
+    def test_not_found_summary_config_error_response(self, client: TestClient, db_session: Session, setup_admin):
         """测试不存在的汇总配置错误响应结构 - 应返回 40401。"""
+        token = self._get_admin_token(client)
         response = client.post(
             "/api/v1/summary-configs/nonexistent-id/send",
             json={
                 "start_time": "2024-01-01T00:00:00Z",
                 "end_time": "2024-01-01T23:59:59Z",
             },
+            headers={"Authorization": f"Bearer {token}"},
         )
 
         assert response.status_code == 404
@@ -280,8 +375,9 @@ class TestErrorResponseWrapper:
         assert data["code"] == 40401
         assert "detail" not in data
 
-    def test_duplicate_summary_config_error_response(self, client: TestClient, db_session: Session):
+    def test_duplicate_summary_config_error_response(self, client: TestClient, db_session: Session, setup_admin):
         """测试重复创建汇总配置的错误响应结构 - 应返回 40901。"""
+        token = self._get_admin_token(client)
         payload = {
             "name": "重复配置",
             "enabled": True,
@@ -290,11 +386,19 @@ class TestErrorResponseWrapper:
         }
 
         # 第一次创建成功
-        response1 = client.post("/api/v1/summary-configs", json=payload)
+        response1 = client.post(
+            "/api/v1/summary-configs",
+            json=payload,
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert response1.status_code == 201
 
         # 第二次创建应返回错误
-        response2 = client.post("/api/v1/summary-configs", json=payload)
+        response2 = client.post(
+            "/api/v1/summary-configs",
+            json=payload,
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert response2.status_code == 409
 
         # 验证错误响应结构

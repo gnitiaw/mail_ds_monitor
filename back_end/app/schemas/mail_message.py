@@ -68,3 +68,60 @@ class ArchiveDetailResponse(BaseModel):
     model_name: str | None = Field(description="大模型名称")
     prompt_version: str | None = Field(description="Prompt 版本")
     parse_error: str | None = Field(description="解析失败原因")
+
+
+class RawMailListItem(BaseModel):
+    """原始邮件列表项。"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    message_id: str = Field(description="原始邮件记录 ID")
+    mailbox_id: str
+    internet_message_id: str | None
+    provider_uid: str | None
+    folder: str
+    subject: str | None
+    sender: str | None = Field(description="发件人邮箱")
+    received_at: datetime | None
+    parse_status: str
+    extraction_status: str
+    has_attachments: bool
+    pulled_at: datetime
+
+
+class RawMailListResponse(BaseModel):
+    """原始邮件列表分页响应。"""
+
+    items: list[RawMailListItem]
+    page: int
+    page_size: int
+    total: int
+
+
+class RawMailDetailResponse(BaseModel):
+    """原始邮件详情响应。"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    message_id: str
+    mailbox_id: str
+    internet_message_id: str | None
+    provider_uid: str | None
+    folder: str
+    subject: str | None
+    sender_name: str | None
+    sender_email: str | None
+    recipients_to: list[str] | None
+    recipients_cc: list[str] | None
+    recipients_bcc: list[str] | None
+    reply_to: list[str] | None
+    flags: list[str] | None
+    has_attachments: bool
+    parse_status: str
+    extraction_status: str
+    parse_error: str | None
+    extraction_error: str | None
+    received_at: datetime | None
+    pulled_at: datetime
+    body_text: str | None
+    body_html: str | None

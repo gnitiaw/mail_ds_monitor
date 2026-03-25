@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, Switch, TimePicker, message, Typography } from 'antd';
+import { Modal, Form, Input, Select, Switch, TimePicker, message, Typography, InputNumber } from 'antd';
 import { createSummaryConfig } from '../../../api/summary';
 import { getMailboxes } from '../../../api/mailbox';
 import type { Mailbox } from '../../../api/types';
@@ -24,6 +24,10 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onCancel, onSuccess 
         summary_mode: 'ai',
         empty_result_policy: 'skip',
         include_statuses: ['archived', 'failed'],
+        summary_scope_mode: 'flat',
+        customer_analysis_mode: 'basic',
+        top_n_per_customer: 5,
+        include_unidentified_senders: true,
       });
       getMailboxes({ page: 1, page_size: 100 }).then(res => {
         setMailboxes(res.items || []);
@@ -85,6 +89,42 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onCancel, onSuccess 
         </Form.Item>
 
         <Typography.Title level={5} style={{ marginTop: 24, marginBottom: 16 }}>汇总范围与策略</Typography.Title>
+        <Form.Item name="summary_scope_mode" label="汇总范围模式" rules={[{ required: true }]}>
+          <Select
+            options={[
+              { label: '普通汇总 (Flat)', value: 'flat' },
+              { label: '按客户归类 (Customer Grouped)', value: 'customer_grouped' },
+            ]}
+          />
+        </Form.Item>
+
+        <Form.Item
+          noStyle
+          shouldUpdate={(prev, curr) => prev.summary_scope_mode !== curr.summary_scope_mode}
+        >
+          {({ getFieldValue }) => {
+            const isGrouped = getFieldValue('summary_scope_mode') === 'customer_grouped';
+            return isGrouped ? (
+              <div style={{ background: '#fafafa', padding: 16, marginBottom: 24, borderRadius: 8 }}>
+                <Form.Item name="customer_analysis_mode" label="归类分析模式" rules={[{ required: true }]}>
+                  <Select
+                    options={[
+                      { label: '基础规则归类', value: 'basic' },
+                      { label: 'AI 摘要增强', value: 'ai' },
+                    ]}
+                  />
+                </Form.Item>
+                <Form.Item name="top_n_per_customer" label="每个客户展示记录数上限" rules={[{ required: true }]}>
+                  <InputNumber min={1} max={50} style={{ width: '100%' }} />
+                </Form.Item>
+                <Form.Item name="include_unidentified_senders" label="包含未识别发件人" valuePropName="checked">
+                  <Switch />
+                </Form.Item>
+              </div>
+            ) : null;
+          }}
+        </Form.Item>
+
         <Form.Item name="mailbox_ids" label="汇总邮箱范围" help="不选表示全部邮箱">
           <Select 
             mode="multiple"

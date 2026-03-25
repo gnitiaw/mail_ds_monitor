@@ -1,0 +1,14 @@
+INFO:     127.0.0.1:57366 - "GET /api/v1/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53774 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53776 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58798 - "GET /api/v1/summary-configs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58799 - "GET /api/v1/summary-configs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58797 - "GET /api/v1/sender-profiles/candidates?page=1&page_size=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63055 - "POST /api/v1/summary-configs/83e233d4-cf4f-4378-a5e3-cd765b6816f3/analysis-runs HTTP/1.1" 403 Forbidden
+INFO:     127.0.0.1:63054 - "POST /api/v1/summary-configs/83e233d4-cf4f-4378-a5e3-cd765b6816f3/analysis-runs HTTP/1.1" 201 Created
+INFO:     127.0.0.1:49678 - "GET /api/v1/analysis-runs/b5bb7b40-598d-4dec-bdb5-4d4f46ae5aed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52567 - "POST /api/v1/summary-configs/83e233d4-cf4f-4378-a5e3-cd765b6816f3/send HTTP/1.1" 403 Forbidden
+INFO:     127.0.0.1:52568 - "GET /api/v1/summary-sends?page=1&page_size=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52566 - "POST /api/v1/summary-configs/83e233d4-cf4f-4378-a5e3-cd765b6816f3/send HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:63347 - "POST /api/v1/summary-configs/83e233d4-cf4f-4378-a5e3-cd765b6816f3/send HTTP/1.1" 403 Forbidden
+INFO:     127.0.0.1:63356 - "GET /api/v1/summary-sends?page=1&page_size=10 HTTP/1.1" 200 OK

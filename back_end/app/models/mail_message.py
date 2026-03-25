@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, UniqueConstraint, func
-from sqlalchemy.dialects.mysql import JSON
+from sqlalchemy.dialects.mysql import JSON, MEDIUMTEXT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -37,8 +37,14 @@ class MailMessage(PrimaryKeyMixin, TimestampMixin, Base):
     reply_to: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     headers: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     flags: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
-    body_text: Mapped[str | None] = mapped_column(Text, nullable=True)
-    body_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    body_text: Mapped[str | None] = mapped_column(
+        Text().with_variant(MEDIUMTEXT, "mysql"),
+        nullable=True,
+    )
+    body_html: Mapped[str | None] = mapped_column(
+        Text().with_variant(MEDIUMTEXT, "mysql"),
+        nullable=True,
+    )
     has_attachments: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     parse_status: Mapped[str] = mapped_column(
         String(32),

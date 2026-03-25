@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import db_session
+from app.core.datetime_utils import assume_utc
 from app.core.exceptions import NotFoundError
 from app.models.archive import ArchiveRecord
 from app.schemas.common import success
@@ -51,7 +52,10 @@ def list_archives(
     total = int(db.scalar(count_stmt) or 0)
 
     # 排序和分页
-    stmt = stmt.order_by(ArchiveRecord.received_at.desc().nullslast())
+    stmt = stmt.order_by(
+        ArchiveRecord.received_at.is_(None),
+        ArchiveRecord.received_at.desc(),
+    )
     stmt = stmt.offset((page - 1) * page_size).limit(page_size)
     items = list(db.scalars(stmt).unique().all())
 
@@ -80,7 +84,7 @@ def list_archives(
                 message_id=archive.message_id,
                 subject=subject,
                 sender=sender,
-                received_at=archive.received_at,
+                received_at=assume_utc(archive.received_at),
                 status=archive.status,
                 tags=archive.risk_tags,
                 summary=archive.summary,
@@ -145,7 +149,7 @@ def get_archive_detail(
         subject=subject,
         sender=sender,
         recipients=recipients,
-        received_at=archive.received_at,
+        received_at=assume_utc(archive.received_at),
         body_text=body_text,
         body_html=body_html,
         extracted_fields=archive.extracted_fields,

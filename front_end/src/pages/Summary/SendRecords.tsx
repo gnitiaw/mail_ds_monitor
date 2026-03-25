@@ -76,6 +76,12 @@ const SendRecords: React.FC = () => {
       render: (id: string) => configs.find(c => c.id === id)?.name || id,
     },
     {
+      title: '分析运行 ID',
+      dataIndex: 'analysis_run_id',
+      key: 'analysis_run_id',
+      render: (id: string | null) => id || '-',
+    },
+    {
       title: '邮件主题',
       dataIndex: 'subject',
       key: 'subject',

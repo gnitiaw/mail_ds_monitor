@@ -1,7 +1,7 @@
 import React from 'react';
 import { Layout as AntLayout, Menu, Typography, Dropdown, Space, Avatar } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { MailOutlined, InboxOutlined, ProfileOutlined, FileTextOutlined, WarningOutlined, UserOutlined } from '@ant-design/icons';
+import { MailOutlined, InboxOutlined, ProfileOutlined, FileTextOutlined, WarningOutlined, UserOutlined, TeamOutlined } from '@ant-design/icons';
 
 const { Header, Content, Sider } = AntLayout;
 
@@ -38,9 +38,19 @@ const MainLayout: React.FC = () => {
       label: '邮箱管理',
     },
     {
+      key: '/mail-messages',
+      icon: <InboxOutlined />,
+      label: '原始邮件',
+    },
+    {
       key: '/archives',
       icon: <InboxOutlined />,
       label: '归档列表',
+    },
+    {
+      key: '/senders',
+      icon: <TeamOutlined />,
+      label: '发件人管理',
     },
     {
       key: '/summary-configs',
@@ -56,6 +66,8 @@ const MainLayout: React.FC = () => {
 
   const selectedKey = location.pathname.startsWith('/archives') 
     ? '/archives' 
+    : location.pathname.startsWith('/mail-messages')
+    ? '/mail-messages'
     : location.pathname.startsWith('/failure-queue')
     ? '/failure-queue'
     : location.pathname;

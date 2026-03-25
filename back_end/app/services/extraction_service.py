@@ -141,6 +141,7 @@ def _calculate_confidence(result: dict[str, Any]) -> float:
 def extract_pending_messages(
     db: Session,
     limit: int = 50,
+    mailbox_id: str | None = None,
 ) -> tuple[int, int, int]:
     """提取所有待处理的邮件消息。
 
@@ -160,8 +161,10 @@ def extract_pending_messages(
         select(MailMessage)
         .where(MailMessage.extraction_status == ExtractionStatus.PENDING.value)
         .where(MailMessage.parse_status == ProcessingStatus.PARSED.value)
-        .limit(limit)
     )
+    if mailbox_id:
+        stmt = stmt.where(MailMessage.mailbox_id == mailbox_id)
+    stmt = stmt.limit(limit)
 
     messages = list(db.scalars(stmt).all())
 

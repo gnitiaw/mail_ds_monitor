@@ -95,3 +95,54 @@ class CaptureTaskType(StrEnum):
     """捕获任务类型。"""
     POLL = "poll"
     MANUAL_REPLAY = "manual_replay"
+
+
+# === 发件人管理与客户问题归类分析 ===
+
+
+class SenderMatchType(StrEnum):
+    """发件人匹配类型。"""
+    EXACT_EMAIL = "exact_email"
+    EMAIL_DOMAIN = "email_domain"
+
+
+class SenderType(StrEnum):
+    """发件人类型。"""
+    CUSTOMER = "customer"
+    VENDOR = "vendor"
+    INTERNAL = "internal"
+    SYSTEM = "system"
+    UNKNOWN = "unknown"
+
+
+class SenderProfileStatus(StrEnum):
+    """发件人配置状态。"""
+    ENABLED = "enabled"
+    DISABLED = "disabled"
+
+
+class SenderIdentificationStatus(StrEnum):
+    """发件人识别状态。"""
+    IDENTIFIED = "identified"
+    UNIDENTIFIED = "unidentified"
+
+
+class SummaryScopeMode(StrEnum):
+    """汇总范围模式。"""
+    FLAT = "flat"
+    CUSTOMER_GROUPED = "customer_grouped"
+
+
+class CustomerAnalysisMode(StrEnum):
+    """客户分析模式。"""
+    BASIC = "basic"
+    AI = "ai"
+
+
+class AnalysisRunStatus(StrEnum):
+    """分析运行状态。"""
+    PENDING = "pending"
+    RUNNING = "running"
+    SUCCESS = "success"
+    FAILED = "failed"
+    CANCELED = "canceled"

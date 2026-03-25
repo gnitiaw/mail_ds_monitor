@@ -7,6 +7,7 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import db_session
+from app.core.datetime_utils import assume_utc
 from app.core.exceptions import ForbiddenError, NotFoundError, ParamError, UnauthorizedError
 from app.models.enums import FailureQueueStatus, UserRole
 from app.models.failure_queue import FailureMailQueue
@@ -95,7 +96,10 @@ def list_failure_queue(
     total = int(db.scalar(count_stmt) or 0)
 
     # 排序和分页
-    stmt = stmt.order_by(FailureMailQueue.received_at.desc().nullslast())
+    stmt = stmt.order_by(
+        FailureMailQueue.received_at.is_(None),
+        FailureMailQueue.received_at.desc(),
+    )
     stmt = stmt.offset((page - 1) * page_size).limit(page_size)
     items = list(db.scalars(stmt).all())
 
@@ -110,7 +114,7 @@ def list_failure_queue(
             task_identifier=item.task_identifier,
             subject=item.subject,
             sender=item.sender,
-            received_at=item.received_at,
+            received_at=assume_utc(item.received_at),
             status=item.status,
             first_captured_at=item.first_captured_at,
             last_seen_at=item.last_seen_at,
@@ -165,7 +169,7 @@ def get_failure_queue_detail(
         task_identifier=item.task_identifier,
         subject=item.subject,
         sender=item.sender,
-        received_at=item.received_at,
+        received_at=assume_utc(item.received_at),
         status=item.status,
         acknowledged_at=item.acknowledged_at,
         acknowledged_by=item.acknowledged_by,

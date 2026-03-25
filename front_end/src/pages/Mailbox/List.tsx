@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Tag, message, Card, Typography } from 'antd';
 import { PlusOutlined, SyncOutlined, EditOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { getMailboxes, pullMailbox } from '../../api/mailbox';
+import { getMailboxes, processMailbox, pullMailbox } from '../../api/mailbox';
 import type { Mailbox } from '../../api/types';
 import MailboxModal from './components/MailboxModal';
 
@@ -15,6 +16,7 @@ const MailboxList: React.FC = () => {
   
   const [modalVisible, setModalVisible] = useState(false);
   const [editingMailbox, setEditingMailbox] = useState<Mailbox | null>(null);
+  const navigate = useNavigate();
 
   const fetchMailboxes = async (p = page, ps = pageSize) => {
     setLoading(true);
@@ -37,6 +39,15 @@ const MailboxList: React.FC = () => {
     try {
       await pullMailbox(id, { force_full_sync: false });
       message.success('已触发拉取任务');
+    } catch {
+      // error handled in interceptor
+    }
+  };
+
+  const handleProcess = async (id: string) => {
+    try {
+      const res = await processMailbox(id, { lookback_minutes: 1440, limit: 50 });
+      message.success(`处理完成：归档 ${res.archive_success_count} 封，失败命中 ${res.failure_matched_count} 封`);
     } catch {
       // error handled in interceptor
     }
@@ -91,8 +102,14 @@ const MailboxList: React.FC = () => {
           }}>
             编辑
           </Button>
+          <Button type="link" onClick={() => navigate(`/mail-messages?mailbox_id=${record.id}`)}>
+            查看原始邮件
+          </Button>
           <Button type="link" icon={<SyncOutlined />} onClick={() => handlePull(record.id)} disabled={record.status !== 'enabled'}>
             拉取
+          </Button>
+          <Button type="link" onClick={() => handleProcess(record.id)} disabled={record.status !== 'enabled'}>
+            处理已拉取邮件
           </Button>
         </Space>
       ),

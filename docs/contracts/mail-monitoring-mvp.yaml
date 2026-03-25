@@ -299,10 +299,15 @@ apis:
           recipient_emails: []
           mailbox_ids: []
           send_time: "09:00"
+          summary_scope_mode: flat
+          include_unidentified_senders: false
+          top_n_per_customer: 3
+          customer_analysis_mode: basic
       total: 0
     field_meanings:
       mailbox_ids: 汇总覆盖的邮箱范围，空数组表示全部邮箱
       send_time: 每日或每周发送时间，使用系统时区
+      summary_scope_mode: flat 为旧普通汇总，customer_grouped 为按客户归类摘要
     auth:
       required: true
       roles: [admin, operator]
@@ -331,6 +336,10 @@ apis:
       send_time: "09:00"
       summary_mode: ai
       empty_result_policy: skip
+      summary_scope_mode: flat
+      include_unidentified_senders: false
+      top_n_per_customer: 3
+      customer_analysis_mode: basic
     response_body:
       id: string
       enabled: true
@@ -339,6 +348,9 @@ apis:
       recipient_emails: 汇总邮件收件人列表
       summary_mode: 首期固定为 ai，表示由大模型生成汇总正文
       empty_result_policy: 无数据时的处理策略，skip 表示跳过发送
+      include_unidentified_senders: customer_grouped 模式下是否纳入未识别发件人
+      top_n_per_customer: 每个客户摘要展示的样例邮件数量
+      customer_analysis_mode: basic 为规则汇总，ai 为规则归类后再做 AI 摘要增强
     auth:
       required: true
       roles: [admin]
@@ -350,6 +362,140 @@ apis:
         message: 汇总配置冲突
     backward_compatibility: 请求新增可选字段兼容旧客户端
 
+  - name: 创建汇总分析运行
+    endpoint: /summary-configs/{config_id}/analysis-runs
+    method: POST
+    path_params:
+      config_id:
+        type: string
+        required: true
+    query_params: {}
+    request_body:
+      window_start: string
+      window_end: string
+      force_rerun: false
+    response_body:
+      run_id: string
+      status: pending
+      reused_existing_run: false
+    field_meanings:
+      force_rerun: true 时可跳过活动 run 复用策略
+      reused_existing_run: 命中幂等键时直接复用已有活动 run
+    auth:
+      required: true
+      roles: [admin, operator]
+    idempotency: 相同配置、相同时间窗口、相同配置快照应复用已有活动 run
+    error_codes:
+      - code: 40401
+        message: 汇总配置不存在
+      - code: 40901
+        message: 当前已有活动分析任务
+    backward_compatibility: 新增接口，向后兼容
+
+  - name: 查询汇总分析运行列表
+    endpoint: /summary-configs/{config_id}/analysis-runs
+    method: GET
+    path_params:
+      config_id:
+        type: string
+        required: true
+    query_params:
+      status:
+        type: string
+        required: false
+        enum: [pending, running, success, failed, canceled]
+      page:
+        type: integer
+        required: false
+      page_size:
+        type: integer
+        required: false
+    request_body: null
+    response_body:
+      items:
+        - run_id: string
+          config_id: string
+          status: success
+          window_start: string
+          window_end: string
+          summary_scope_mode: customer_grouped
+          customer_analysis_mode: ai
+          ai_fallback_used: false
+          created_at: string
+          finished_at: string
+          error_message: null
+      page: 1
+      page_size: 20
+      total: 0
+    field_meanings:
+      ai_fallback_used: AI 不可用时是否降级为规则汇总
+    auth:
+      required: true
+      roles: [admin, operator]
+    idempotency: not_applicable
+    error_codes:
+      - code: 40401
+        message: 汇总配置不存在
+    backward_compatibility: 新增接口，向后兼容
+
+  - name: 获取汇总分析运行详情
+    endpoint: /analysis-runs/{run_id}
+    method: GET
+    path_params:
+      run_id:
+        type: string
+        required: true
+    query_params: {}
+    request_body: null
+    response_body:
+      run_id: string
+      config_id: string
+      status: success
+      window_start: string
+      window_end: string
+      config_snapshot:
+        summary_scope_mode: customer_grouped
+        mailbox_ids: []
+        include_statuses:
+          - archived
+        include_unidentified_senders: true
+        top_n_per_customer: 3
+        customer_analysis_mode: ai
+      result_payload:
+        overview:
+          total_records: 10
+          matched_customer_count: 2
+          unidentified_record_count: 1
+          failed_record_count: 2
+          archived_record_count: 8
+          ai_fallback_used: false
+        customers:
+          - customer_name: 客户A
+            sender_count: 2
+            record_count: 5
+            high_priority_count: 1
+            issue_categories:
+              - category: 对账异常
+                count: 3
+                sample_subjects: []
+            top_records: []
+        unidentified:
+          record_count: 1
+          senders: []
+        summary_markdown: string
+      error_message: null
+    field_meanings:
+      config_snapshot: 本次分析运行时实际采用的配置快照
+      result_payload: 首期以 JSON 持久化客户归类分析结果
+    auth:
+      required: true
+      roles: [admin, operator]
+    idempotency: not_applicable
+    error_codes:
+      - code: 40401
+        message: 分析运行不存在
+    backward_compatibility: 新增接口，向后兼容
+
   - name: 手动发送汇总邮件
     endpoint: /summary-configs/{config_id}/send
     method: POST
@@ -359,25 +505,27 @@ apis:
         required: true
     query_params: {}
     request_body:
+      analysis_run_id: string
       start_time: string
       end_time: string
     response_body:
       send_id: string
       status: pending
     field_meanings:
-      start_time: 汇总统计开始时间
-      end_time: 汇总统计结束时间
+      analysis_run_id: customer_grouped 模式下必填，且必须引用 success 状态的分析运行
+      start_time: 旧 flat 模式兼容路径使用的统计开始时间
+      end_time: 旧 flat 模式兼容路径使用的统计结束时间
       send_id: 发送任务 ID
     auth:
       required: true
       roles: [admin, operator]
-    idempotency: 相同配置和相同时间窗口重复触发时应避免重复发送或提供显式覆盖参数
+    idempotency: customer_grouped 模式下以 config_id + analysis_run_id 为发送幂等维度；flat 模式保留原时间窗口幂等语义
     error_codes:
       - code: 40401
-        message: 汇总配置不存在
+        message: 汇总配置或分析运行不存在
       - code: 40901
-        message: 当前已有进行中的发送任务
-    backward_compatibility: 返回结构扩展时保持 send_id 和 status 不变
+        message: 分析运行状态不允许发送或当前已有进行中的发送任务
+    backward_compatibility: customer_grouped 模式要求 analysis_run_id，旧 flat 模式暂时兼容 start_time/end_time；返回结构保持 send_id 和 status 不变
 
   - name: 查询汇总邮件发送记录
     endpoint: /summary-sends
@@ -402,6 +550,7 @@ apis:
       items:
         - send_id: string
           config_id: string
+          analysis_run_id: string
           subject: string
           recipient_count: 2
           status: success
@@ -412,6 +561,7 @@ apis:
       total: 0
     field_meanings:
       recipient_count: 本次发送的收件人数
+      analysis_run_id: 若本次发送来自 customer_grouped 模式，则显式指向实际使用的分析运行
       error_message: 发送失败时的错误信息
     auth:
       required: true

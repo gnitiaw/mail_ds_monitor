@@ -8,9 +8,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.models.enums import (
+    CustomerAnalysisMode,
     EmptyResultPolicy,
     SummaryMode,
     SummaryScheduleType,
+    SummaryScopeMode,
     SummarySendStatus,
 )
 from app.models.mixins import PrimaryKeyMixin, TimestampMixin
@@ -47,8 +49,34 @@ class SummaryConfig(PrimaryKeyMixin, TimestampMixin, Base):
     )
     prompt_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
+    # 客户归类摘要扩展字段
+    summary_scope_mode: Mapped[str] = mapped_column(
+        String(32),
+        default=SummaryScopeMode.FLAT.value,
+        nullable=False,
+    )
+    include_unidentified_senders: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+    top_n_per_customer: Mapped[int] = mapped_column(
+        Integer,
+        default=5,
+        nullable=False,
+    )
+    customer_analysis_mode: Mapped[str] = mapped_column(
+        String(32),
+        default=CustomerAnalysisMode.BASIC.value,
+        nullable=False,
+    )
+
     mailbox: Mapped["Mailbox | None"] = relationship(back_populates="summary_configs")
     send_records: Mapped[list["SummarySendRecord"]] = relationship(
+        back_populates="config",
+        cascade="all, delete-orphan",
+    )
+    analysis_runs: Mapped[list["AnalysisRun"]] = relationship(
         back_populates="config",
         cascade="all, delete-orphan",
     )
@@ -65,6 +93,11 @@ class SummarySendRecord(PrimaryKeyMixin, TimestampMixin, Base):
         String(36),
         ForeignKey("summary_configs.id", ondelete="CASCADE"),
         nullable=False,
+    )
+    analysis_run_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("analysis_runs.id", ondelete="SET NULL"),
+        nullable=True,
     )
     status: Mapped[str] = mapped_column(
         String(32),
@@ -88,3 +121,6 @@ class SummarySendRecord(PrimaryKeyMixin, TimestampMixin, Base):
     )
 
     config: Mapped["SummaryConfig"] = relationship(back_populates="send_records")
+    analysis_run: Mapped["AnalysisRun | None"] = relationship(
+        back_populates="send_records"
+    )

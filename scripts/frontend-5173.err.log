@@ -1,0 +1,23 @@
+[2m14:35:45[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+[2m14:35:45[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Card] `bodyStyle` is deprecated. Please use `styles.body` instead.
+[2m14:35:45[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Card] `bodyStyle` is deprecated. Please use `styles.body` instead.
+[2m14:35:54[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+[2m14:35:56[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Modal] `destroyOnClose` is deprecated. Please use `destroyOnHidden` instead.
+[2m14:36:11[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Space] `direction` is deprecated. Please use `orientation` instead.
+[2m14:36:28[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Tabs] `Tabs.TabPane` is deprecated. Please use `items` instead.
+[2m14:36:41[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Modal] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+[2m14:46:52[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+[2m14:46:52[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Card] `bodyStyle` is deprecated. Please use `styles.body` instead.
+[2m14:46:53[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Card] `bodyStyle` is deprecated. Please use `styles.body` instead.
+[2m14:47:04[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+[2m14:47:06[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Modal] `destroyOnClose` is deprecated. Please use `destroyOnHidden` instead.
+[2m15:04:54[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Space] `direction` is deprecated. Please use `orientation` instead.
+[2m15:17:09[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+[2m15:17:09[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Card] `bodyStyle` is deprecated. Please use `styles.body` instead.
+[2m15:17:10[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Card] `bodyStyle` is deprecated. Please use `styles.body` instead.
+[2m15:17:15[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead.
+[2m15:17:18[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Modal] `destroyOnClose` is deprecated. Please use `destroyOnHidden` instead.
+[2m15:17:30[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Alert] `message` is deprecated. Please use `title` instead.
+[2m15:17:54[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Space] `direction` is deprecated. Please use `orientation` instead.
+[2m15:34:08[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: [antd: Tabs] `Tabs.TabPane` is deprecated. Please use `items` instead.
+[2m15:34:12[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mWarning: Instance created by `useForm` is not connected to any Form element. Forget to pass `form` prop?

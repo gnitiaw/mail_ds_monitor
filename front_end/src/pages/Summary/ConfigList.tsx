@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Tag, message, Card, Typography } from 'antd';
-import { PlusOutlined, SendOutlined } from '@ant-design/icons';
+import { PlusOutlined, SendOutlined, ProfileOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { getSummaryConfigs, sendSummary } from '../../api/summary';
 import type { SummaryConfig } from '../../api/types';
 import ConfigModal from './components/ConfigModal';
@@ -9,9 +10,10 @@ import SendModal from './components/SendModal';
 const ConfigList: React.FC = () => {
   const [data, setData] = useState<SummaryConfig[]>([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const [configModalVisible, setConfigModalVisible] = useState(false);
-  
+
   const [sendModalVisible, setSendModalVisible] = useState(false);
   const [selectedConfig, setSelectedConfig] = useState<string | null>(null);
 
@@ -48,15 +50,16 @@ const ConfigList: React.FC = () => {
       key: 'name',
     },
     {
+      title: '模式',
+      dataIndex: 'summary_scope_mode',
+      key: 'summary_scope_mode',
+      render: (mode: string) => <Tag color={mode === 'customer_grouped' ? 'purple' : 'default'}>{mode === 'customer_grouped' ? '客户归类' : '普通汇总'}</Tag>,
+    },
+    {
       title: '发送周期',
       dataIndex: 'schedule_type',
       key: 'schedule_type',
       render: (type: string) => <Tag color="var(--primary-color)">{type}</Tag>,
-    },
-    {
-      title: '发送时间',
-      dataIndex: 'send_time',
-      key: 'send_time',
     },
     {
       title: '收件人',
@@ -75,12 +78,18 @@ const ConfigList: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: SummaryConfig) => (
+      render: (_: unknown, record: SummaryConfig) => (
         <Space>
-          <Button type="link" icon={<SendOutlined />} onClick={() => {
-            setSelectedConfig(record.id);
-            setSendModalVisible(true);
-          }}>手动发送</Button>
+          {record.summary_scope_mode === 'customer_grouped' ? (
+            <Button type="link" icon={<ProfileOutlined />} onClick={() => navigate(`/summary-configs/${record.id}/analysis-runs`)}>
+              分析运行
+            </Button>
+          ) : (
+            <Button type="link" icon={<SendOutlined />} onClick={() => {
+              setSelectedConfig(record.id);
+              setSendModalVisible(true);
+            }}>手动发送</Button>
+          )}
         </Space>
       ),
     }
@@ -95,7 +104,7 @@ const ConfigList: React.FC = () => {
         </div>
         <Button type="primary" size="large" style={{ borderRadius: 'var(--border-radius-small)' }} icon={<PlusOutlined />} onClick={() => setConfigModalVisible(true)}>新增配置</Button>
       </div>
-      
+
       <Card className="main-card">
         <Table
           rowKey="id"
@@ -106,7 +115,7 @@ const ConfigList: React.FC = () => {
         />
       </Card>
 
-      <ConfigModal 
+      <ConfigModal
         visible={configModalVisible}
         onCancel={() => setConfigModalVisible(false)}
         onSuccess={() => {

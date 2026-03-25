@@ -20,3 +20,15 @@ export const updateMailbox = (id: string, data: Partial<Mailbox> & { password?: 
 export const pullMailbox = (id: string, data: { force_full_sync: boolean }) => {
   return request.post<any, { job_id: string; mailbox_id: string; status: string }>(`/mailboxes/${id}/pull`, data);
 };
+
+export const processMailbox = (id: string, data?: { lookback_minutes?: number; limit?: number }) => {
+  return request.post<any, {
+    mailbox_id: string;
+    archive_success_count: number;
+    archive_failed_count: number;
+    archive_skipped_count: number;
+    failure_scanned_count: number;
+    failure_matched_count: number;
+    failure_deduped_count: number;
+  }>(`/mailboxes/${id}/process`, data || {});
+};

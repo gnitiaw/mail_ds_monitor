@@ -75,6 +75,12 @@ def create_application() -> FastAPI:
     def on_startup() -> None:
         init_db_if_enabled()
 
+        # 初始化 APScheduler 并恢复卡住的任务
+        from app.core.scheduler import init_scheduler, recover_stuck_runs
+
+        init_scheduler()
+        recover_stuck_runs()
+
         # 注册自动轮询定时任务
         if settings.capture_poll_enabled:
             logger.info("Capture auto-poll enabled, starting scheduler")
@@ -88,6 +94,11 @@ def create_application() -> FastAPI:
         if _poll_timer:
             _poll_timer.cancel()
             logger.info("Auto poll timer cancelled")
+
+        # 关闭 APScheduler
+        from app.core.scheduler import shutdown_scheduler
+
+        shutdown_scheduler(wait=True)
 
     app.include_router(api_router, prefix=settings.api_prefix)
     return app

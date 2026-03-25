@@ -1,0 +1,133 @@
+feature: 原始邮件可见性
+
+endpoints:
+  - name: 原始邮件列表
+    endpoint: /api/v1/mail-messages
+    method: GET
+    auth:
+      required: false
+      roles: []
+    path_params: {}
+    query_params:
+      mailbox_id:
+        type: string
+        required: false
+        meaning: 按邮箱筛选
+      keyword:
+        type: string
+        required: false
+        meaning: 按主题或发件人模糊搜索
+      page:
+        type: integer
+        required: false
+        default: 1
+      page_size:
+        type: integer
+        required: false
+        default: 20
+    request_body: null
+    response_body:
+      code: 0
+      message: success
+      data:
+        items:
+          - message_id: string
+            mailbox_id: string
+            internet_message_id: string | null
+            provider_uid: string | null
+            folder: string
+            subject: string | null
+            sender: string | null
+            received_at: ISO8601 | null
+            parse_status: string
+            extraction_status: string
+            has_attachments: boolean
+            pulled_at: ISO8601
+        page: integer
+        page_size: integer
+        total: integer
+    field_meanings:
+      message_id: 原始邮件记录 ID
+      internet_message_id: 邮件头里的 Message-ID
+      provider_uid: IMAP 服务端 UID
+      parse_status: 解析状态
+      extraction_status: 提取状态
+    enum_definitions:
+      parse_status:
+        - pending
+        - parsed
+        - failed
+      extraction_status:
+        - pending
+        - success
+        - failed
+    idempotency: 只读接口，无幂等副作用
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40401
+        message: 邮箱不存在
+      - code: 50001
+        message: 系统异常
+    compatibility: 新增接口，向后兼容
+
+  - name: 原始邮件详情
+    endpoint: /api/v1/mail-messages/{message_id}
+    method: GET
+    auth:
+      required: false
+      roles: []
+    path_params:
+      message_id:
+        type: string
+        required: true
+        meaning: 原始邮件记录 ID
+    query_params: {}
+    request_body: null
+    response_body:
+      code: 0
+      message: success
+      data:
+        message_id: string
+        mailbox_id: string
+        internet_message_id: string | null
+        provider_uid: string | null
+        folder: string
+        subject: string | null
+        sender_name: string | null
+        sender_email: string | null
+        recipients_to: string[] | null
+        recipients_cc: string[] | null
+        recipients_bcc: string[] | null
+        reply_to: string[] | null
+        flags: string[] | null
+        has_attachments: boolean
+        parse_status: string
+        extraction_status: string
+        parse_error: string | null
+        extraction_error: string | null
+        received_at: ISO8601 | null
+        pulled_at: ISO8601
+        body_text: string | null
+        body_html: string | null
+    field_meanings:
+      body_text: 纯文本正文
+      body_html: HTML 正文
+      parse_error: 解析失败原因
+      extraction_error: 提取失败原因
+    enum_definitions:
+      parse_status:
+        - pending
+        - parsed
+        - failed
+      extraction_status:
+        - pending
+        - success
+        - failed
+    idempotency: 只读接口，无幂等副作用
+    error_codes:
+      - code: 40401
+        message: 原始邮件不存在
+      - code: 50001
+        message: 系统异常
+    compatibility: 新增接口，向后兼容

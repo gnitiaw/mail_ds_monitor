@@ -7,8 +7,9 @@ from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.models.analysis_run import AnalysisRun
 from app.models.archive import ArchiveRecord
-from app.models.enums import SummarySendStatus
+from app.models.enums import SummaryScopeMode, SummarySendStatus
 from app.models.summary import SummaryConfig, SummarySendRecord
 from app.services.llm_service import LLMClientSync, LLMError
 from app.services.smtp_service import send_summary_email, SMTPError
@@ -33,7 +34,37 @@ def execute_summary_send(
         end_time: 统计结束时间
     """
     try:
-        # 查询归档记录
+        # customer_grouped 模式：直接复用 analysis_run 结果
+        if config.summary_scope_mode == SummaryScopeMode.CUSTOMER_GROUPED.value:
+            if send_record.analysis_run_id:
+                analysis_run = db.get(AnalysisRun, send_record.analysis_run_id)
+                if analysis_run and analysis_run.result_payload:
+                    summary_content = analysis_run.result_payload.get("summary_markdown", "")
+                    if not summary_content:
+                        # 如果没有 markdown，用基础格式化
+                        summary_content = _format_result_payload(analysis_run.result_payload)
+
+                    date_str = start_time.strftime("%Y-%m-%d")
+                    subject = f"[邮件监控] {config.name} - {date_str} 客户问题归类汇总"
+
+                    result = send_summary_email(
+                        to_emails=config.recipient_emails,
+                        subject=subject,
+                        summary_content=summary_content,
+                    )
+
+                    send_record.status = SummarySendStatus.SUCCESS.value
+                    send_record.subject = subject
+                    send_record.recipient_emails = config.recipient_emails
+                    send_record.recipient_count = result["recipient_count"]
+                    send_record.summary_text = summary_content
+                    send_record.sent_at = datetime.now(timezone.utc)
+                    send_record.model_name = analysis_run.model_name
+                    db.commit()
+                    logger.info(f"customer_grouped summary sent using analysis_run {analysis_run.id}")
+                    return
+
+        # flat 模式或无 analysis_run：使用旧的基于时间窗口的逻辑
         stmt = select(ArchiveRecord).where(
             and_(
                 ArchiveRecord.received_at >= start_time,
@@ -99,6 +130,39 @@ def execute_summary_send(
         send_record.status = SummarySendStatus.FAILED.value
         send_record.error_message = f"Unexpected error: {e}"
         db.commit()
+
+
+def _format_result_payload(result_payload: dict) -> str:
+    """格式化 analysis_run 结果为可读文本。"""
+    lines = ["# 客户问题归类汇总", ""]
+
+    overview = result_payload.get("overview", {})
+    if overview:
+        lines.extend([
+            "## 概览",
+            "",
+            f"- 总记录数: {overview.get('total_records', 0)}",
+            f"- 已识别客户数: {overview.get('matched_customer_count', 0)}",
+            f"- 未识别记录数: {overview.get('unidentified_record_count', 0)}",
+            "",
+        ])
+
+    customers = result_payload.get("customers", [])
+    for customer in customers:
+        lines.extend([
+            f"## {customer.get('customer_name', '未知客户')}",
+            "",
+            f"- 记录数: {customer.get('record_count', 0)}",
+            f"- 高优先级: {customer.get('high_priority_count', 0)}",
+            "",
+        ])
+
+    lines.extend([
+        "---",
+        "*此摘要由系统自动生成*",
+    ])
+
+    return "\n".join(lines)
 
 
 def _generate_summary_content(

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(plan-ceo-review)",
+      "Skill(plan-eng-review)",
+      "Bash(pip install:*)",
+      "Bash(python -c \"from app.core.scheduler import scheduler; print\\(''Scheduler module OK''\\)\")",
+      "Bash(python -m py_compile app/services/customer_analysis_service.py app/services/sender_profile_service.py app/core/scheduler.py)",
+      "Bash(uv run:*)"
+    ]
+  }
+}

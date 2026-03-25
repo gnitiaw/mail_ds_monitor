@@ -8,10 +8,14 @@ import Login from './pages/Login';
 import MailboxList from './pages/Mailbox/List';
 import ArchiveList from './pages/Archive/List';
 import ArchiveDetail from './pages/Archive/Detail';
+import RawMailList from './pages/MailMessage/List';
+import RawMailDetailView from './pages/MailMessage/Detail';
 import SummaryConfigList from './pages/Summary/ConfigList';
 import SummarySendRecords from './pages/Summary/SendRecords';
+import AnalysisRuns from './pages/Summary/AnalysisRuns';
 import FailureQueueList from './pages/FailureQueue/List';
 import FailureQueueDetailView from './pages/FailureQueue/Detail';
+import SenderList from './pages/Sender/List';
 
 const App: React.FC = () => {
   return (
@@ -64,12 +68,16 @@ const App: React.FC = () => {
               <Route index element={<Navigate to="/failure-queue" replace />} />
               <Route path="failure-queue" element={<FailureQueueList />} />
               <Route path="failure-queue/:id" element={<FailureQueueDetailView />} />
+              <Route path="mail-messages" element={<RawMailList />} />
+              <Route path="mail-messages/:id" element={<RawMailDetailView />} />
               
               {/* Existing Routes */}
               <Route path="mailboxes" element={<MailboxList />} />
               <Route path="archives" element={<ArchiveList />} />
               <Route path="archives/:id" element={<ArchiveDetail />} />
+              <Route path="senders" element={<SenderList />} />
               <Route path="summary-configs" element={<SummaryConfigList />} />
+              <Route path="summary-configs/:configId/analysis-runs" element={<AnalysisRuns />} />
               <Route path="summary-sends" element={<SummarySendRecords />} />
             </Route>
           </Route>

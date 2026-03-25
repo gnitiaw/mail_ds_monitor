@@ -1,18 +1,22 @@
+from app.models.analysis_run import AnalysisRun
 from app.models.archive import ArchiveRecord
 from app.models.failure_capture import FailureCaptureRule
 from app.models.failure_queue import FailureMailQueue
 from app.models.mail_message import MailMessage
 from app.models.mailbox import Mailbox
+from app.models.sender_profile import SenderProfile
 from app.models.summary import SummaryConfig, SummarySendRecord
 from app.models.task_log import TaskLog
 from app.models.user import User
 
 __all__ = [
+    "AnalysisRun",
     "ArchiveRecord",
     "FailureCaptureRule",
     "FailureMailQueue",
     "MailMessage",
     "Mailbox",
+    "SenderProfile",
     "SummaryConfig",
     "SummarySendRecord",
     "TaskLog",

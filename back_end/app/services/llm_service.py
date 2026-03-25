@@ -65,6 +65,30 @@ SUMMARY_PROMPT = """你是一个邮件汇总助手。请根据以下归档记录
 以 Markdown 格式返回。"""
 
 
+CUSTOMER_ANALYSIS_PROMPT = """你是一个客户问题分析助手。请根据以下客户归类数据生成摘要报告。
+
+## 概览数据
+{overview}
+
+## 各客户分析数据
+{customers}
+
+## 未识别发件人
+未识别记录数: {unidentified_count}
+
+请生成一份专业的客户问题归类摘要报告，包含：
+1. 整体概述：总结当前时间窗口内的客户问题整体情况
+2. 重点客户分析：识别需要优先关注的客户及其主要问题
+3. 风险提示：指出可能存在风险的客户或问题类型
+4. 行动建议：给出具体的跟进建议
+
+要求：
+- 使用 Markdown 格式
+- 语言简洁专业
+- 突出重点信息
+- 避免冗余描述"""
+
+
 class LLMClient:
     """OpenAI 兼容的大模型客户端。"""
 
@@ -327,6 +351,43 @@ class LLMClientSync:
         )
 
         prompt = SUMMARY_PROMPT.format(records=records_text)
+        messages = [{"role": "user", "content": prompt}]
+
+        return self._call_api(
+            messages,
+            temperature=0.3,
+            max_tokens=settings.llm_max_tokens,
+        )
+
+    def generate_customer_analysis_summary(
+        self,
+        data: dict[str, Any],
+    ) -> str:
+        """生成客户归类分析摘要。
+
+        Args:
+            data: 包含 overview、customers、unidentified_count 的字典
+
+        Returns:
+            Markdown 格式的摘要
+        """
+        import json
+
+        overview_text = json.dumps(data.get("overview", {}), ensure_ascii=False, indent=2)
+        customers_text = "\n\n".join(
+            f"### {c['name']}\n"
+            f"- 记录数: {c['record_count']}\n"
+            f"- 高优先级: {c['high_priority_count']}\n"
+            f"- 问题类型: {', '.join(c.get('categories', []))}"
+            for c in data.get("customers", [])
+        )
+
+        prompt = CUSTOMER_ANALYSIS_PROMPT.format(
+            overview=overview_text,
+            customers=customers_text,
+            unidentified_count=data.get("unidentified_count", 0),
+        )
+
         messages = [{"role": "user", "content": prompt}]
 
         return self._call_api(

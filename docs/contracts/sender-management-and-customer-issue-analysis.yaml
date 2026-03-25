@@ -1,0 +1,631 @@
+feature: 发件人管理与客户问题归类分析
+
+enum_definitions:
+  sender_match_type:
+    - exact_email
+    - email_domain
+  sender_profile_status:
+    - enabled
+    - disabled
+  sender_type:
+    - customer
+    - vendor
+    - internal
+    - system
+    - unknown
+  sender_identification_status:
+    - identified
+    - unidentified
+  analysis_mode:
+    - basic
+    - ai
+  archive_status:
+    - archived
+    - failed
+  group_by:
+    - customer
+  summary_scope_mode:
+    - flat
+    - customer_grouped
+  analysis_run_status:
+    - pending
+    - running
+    - success
+    - failed
+    - canceled
+
+common_rules:
+  date_format: ISO8601
+  null_handling: 明确区分 null、空字符串、缺失字段
+  mailbox_scope: operator 只能访问 mailbox_scope_ids 范围内的数据，admin 可访问全部
+  matching_priority: exact_email 优先于 email_domain
+  analysis_data_source: 首期客户问题分析主口径来自 archive_records 及其关联 mail_messages
+  sender_profile_permission: sender_profiles 仅允许 admin 创建和更新，operator 只读
+  ui_flow: 生成分析 -> 查看结果 -> 基于成功 analysis_run 发送
+  customer_group_key: 首期按 customer_name 分组，customer_code 仅作补充展示字段
+
+apis:
+  - name: 获取候选发件人列表
+    endpoint: /sender-profiles/candidates
+    method: GET
+    auth:
+      required: true
+      roles:
+        - admin
+        - operator
+    path_params: {}
+    query_params:
+      mailbox_id:
+        type: string | null
+        required: false
+        meaning: 可选，按单个邮箱过滤候选发件人
+      identified_status:
+        type: enum(identified|unidentified) | null
+        required: false
+        meaning: 按是否已建档筛选
+      keyword:
+        type: string | null
+        required: false
+        meaning: 按发件人邮箱、域名、样例名称模糊搜索
+      date_from:
+        type: datetime | null
+        required: false
+        meaning: 候选发件人统计起始时间
+      date_to:
+        type: datetime | null
+        required: false
+        meaning: 候选发件人统计结束时间
+      page:
+        type: integer
+        required: false
+        default: 1
+      page_size:
+        type: integer
+        required: false
+        default: 20
+    request_body: null
+    response_body:
+      code: 0
+      message: success
+      data:
+        items:
+          - sender_email: string
+            sender_name_sample: string | null
+            email_domain: string | null
+            message_count: integer
+            archive_count: integer
+            last_seen_at: datetime | null
+            latest_subject: string | null
+            identified_profile_id: string | null
+            identified_status: identified | unidentified
+            customer_name: string | null
+        pagination:
+          total: integer
+          page: integer
+          page_size: integer
+    field_meanings:
+      sender_email: 发件人邮箱，作为候选发件人主标识
+      sender_name_sample: 最近一次解析到的发件人名称样例
+      email_domain: 发件人邮箱域名
+      message_count: 时间窗口内原始邮件数量
+      archive_count: 时间窗口内已进入归档的数据数量
+      identified_profile_id: 若已建档，则返回对应发件人档案 ID
+    idempotency: 查询接口，无副作用
+    errors:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限访问该邮箱范围
+      - code: 50001
+        message: 系统异常
+    compatibility: 新增接口，向后兼容
+
+  - name: 获取发件人档案列表
+    endpoint: /sender-profiles
+    method: GET
+    auth:
+      required: true
+      roles:
+        - admin
+        - operator
+    path_params: {}
+    query_params:
+      keyword:
+        type: string | null
+        required: false
+        meaning: 按客户名称、发件人标签、匹配值模糊搜索
+      status:
+        type: enum(enabled|disabled) | null
+        required: false
+      match_type:
+        type: enum(exact_email|email_domain) | null
+        required: false
+      customer_name:
+        type: string | null
+        required: false
+      page:
+        type: integer
+        required: false
+        default: 1
+      page_size:
+        type: integer
+        required: false
+        default: 20
+    request_body: null
+    response_body:
+      code: 0
+      message: success
+      data:
+        items:
+          - profile_id: string
+            match_type: exact_email | email_domain
+            match_value: string
+            customer_name: string
+            customer_code: string | null
+            sender_label: string | null
+            sender_type: customer | vendor | internal | system | unknown
+            status: enabled | disabled
+            notes: string | null
+            last_seen_at: datetime | null
+            linked_message_count: integer
+            created_at: datetime
+            updated_at: datetime
+        pagination:
+          total: integer
+          page: integer
+          page_size: integer
+    field_meanings:
+      match_value: 当 match_type 为 exact_email 时是邮箱地址，为 email_domain 时是域名
+      sender_label: 业务上给该发件人归类的展示名称，例如“银河证券批量任务通知”
+      linked_message_count: 当前档案命中的历史邮件数量
+    idempotency: 查询接口，无副作用
+    errors:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 50001
+        message: 系统异常
+    compatibility: 新增接口，向后兼容
+
+  - name: 创建发件人档案
+    endpoint: /sender-profiles
+    method: POST
+    auth:
+      required: true
+      roles:
+        - admin
+    path_params: {}
+    query_params: {}
+    request_body:
+      match_type: exact_email | email_domain
+      match_value: string
+      customer_name: string
+      customer_code: string | null
+      sender_label: string | null
+      sender_type: customer | vendor | internal | system | unknown
+      status: enabled | disabled
+      notes: string | null
+    response_body:
+      code: 0
+      message: success
+      data:
+        profile_id: string
+        match_type: exact_email | email_domain
+        match_value: string
+        customer_name: string
+        customer_code: string | null
+        sender_label: string | null
+        sender_type: customer | vendor | internal | system | unknown
+        status: enabled | disabled
+        notes: string | null
+        created_at: datetime
+        updated_at: datetime
+    field_meanings:
+      status: disabled 后不再参与客户归类匹配
+    idempotency: 相同 match_type + match_value 的启用中档案禁止重复创建
+    errors:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40901
+        message: 发件人档案冲突，匹配规则已存在
+      - code: 50001
+        message: 系统异常
+    compatibility: 新增接口，向后兼容
+
+  - name: 更新发件人档案
+    endpoint: /sender-profiles/{profile_id}
+    method: PUT
+    auth:
+      required: true
+      roles:
+        - admin
+    path_params:
+      profile_id:
+        type: string
+        required: true
+        meaning: 发件人档案 ID
+    query_params: {}
+    request_body:
+      customer_name: string | null
+      customer_code: string | null
+      sender_label: string | null
+      sender_type: customer | vendor | internal | system | unknown | null
+      status: enabled | disabled | null
+      notes: string | null
+    response_body:
+      code: 0
+      message: success
+      data:
+        profile_id: string
+        match_type: exact_email | email_domain
+        match_value: string
+        customer_name: string
+        customer_code: string | null
+        sender_label: string | null
+        sender_type: customer | vendor | internal | system | unknown
+        status: enabled | disabled
+        notes: string | null
+        created_at: datetime
+        updated_at: datetime
+    field_meanings:
+      profile_id: 发件人档案主键
+    idempotency: 同一请求体重复提交应返回相同结果
+    errors:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40401
+        message: 发件人档案不存在
+      - code: 40901
+        message: 更新后与现有匹配规则冲突
+      - code: 50001
+        message: 系统异常
+    compatibility: 新增接口，向后兼容
+
+  - name: 创建汇总配置
+    endpoint: /summary-configs
+    method: POST
+    auth:
+      required: true
+      roles:
+        - admin
+    path_params: {}
+    query_params: {}
+    request_body:
+      name: string
+      enabled: boolean
+      schedule_type: daily
+      recipient_emails: list[string]
+      mailbox_ids: list[string] | null
+      include_statuses: list[archived | failed] | null
+      send_time: string
+      summary_mode: ai
+      empty_result_policy: skip | send_empty
+      summary_scope_mode: flat | customer_grouped
+      include_unidentified_senders: boolean
+      top_n_per_customer: integer
+      customer_analysis_mode: basic | ai
+    response_body:
+      code: 0
+      message: success
+      data:
+        id: string
+        enabled: boolean
+    field_meanings:
+      summary_scope_mode: flat 表示旧普通汇总，customer_grouped 表示按客户归类摘要
+      include_unidentified_senders: customer_grouped 模式下是否纳入未识别发件人分组
+      top_n_per_customer: 每个客户在摘要中展示的样例邮件数量上限
+      customer_analysis_mode: basic 为规则汇总，ai 为规则归类后再做 AI 摘要增强
+    idempotency: 同名配置重复提交需按冲突处理或幂等返回
+    errors:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40901
+        message: 汇总配置冲突
+      - code: 50001
+        message: 系统异常
+    compatibility: 对既有 /summary-configs 创建契约做扩展；新增字段必须有默认值兼容旧客户端
+
+  - name: 获取配置作用域分析运行列表
+    endpoint: /summary-configs/{config_id}/analysis-runs
+    method: GET
+    auth:
+      required: true
+      roles:
+        - admin
+        - operator
+    path_params:
+      config_id:
+        type: string
+        required: true
+        meaning: 汇总配置 ID
+    query_params:
+      status:
+        type: enum(pending|running|success|failed|canceled) | null
+        required: false
+      page:
+        type: integer
+        required: false
+        default: 1
+      page_size:
+        type: integer
+        required: false
+        default: 20
+    request_body: null
+    response_body:
+      code: 0
+      message: success
+      data:
+        items:
+          - run_id: string
+            config_id: string
+            status: pending | running | success | failed | canceled
+            window_start: datetime
+            window_end: datetime
+            summary_scope_mode: flat | customer_grouped
+            customer_analysis_mode: basic | ai
+            ai_fallback_used: boolean
+            created_at: datetime
+            finished_at: datetime | null
+            error_message: string | null
+        pagination:
+          total: integer
+          page: integer
+          page_size: integer
+    field_meanings:
+      ai_fallback_used: 请求 AI 模式但最终降级为规则汇总时为 true
+    idempotency: 查询接口，无副作用
+    errors:
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限访问该配置范围
+      - code: 40401
+        message: 汇总配置不存在
+      - code: 50001
+        message: 系统异常
+    compatibility: 新增接口，向后兼容
+
+  - name: 创建配置作用域分析运行
+    endpoint: /summary-configs/{config_id}/analysis-runs
+    method: POST
+    auth:
+      required: true
+      roles:
+        - admin
+        - operator
+    path_params:
+      config_id:
+        type: string
+        required: true
+        meaning: 汇总配置 ID
+    query_params: {}
+    request_body:
+      window_start: datetime
+      window_end: datetime
+      force_rerun: boolean | null
+    response_body:
+      code: 0
+      message: success
+      data:
+        run_id: string
+        status: pending
+        reused_existing_run: boolean
+    field_meanings:
+      force_rerun: true 时允许跳过活动 run 复用策略，新建新一轮分析
+      reused_existing_run: true 表示命中幂等键，直接复用已有活动 run
+    idempotency: 以 config_id + window_start + window_end + config_snapshot_hash 为核心幂等维度，活动 run 重复触发应复用
+    errors:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限访问该配置范围
+      - code: 40401
+        message: 汇总配置不存在
+      - code: 40901
+        message: 当前已有活动分析任务
+      - code: 50001
+        message: 系统异常
+    compatibility: 新增接口，向后兼容
+
+  - name: 获取分析运行详情
+    endpoint: /analysis-runs/{run_id}
+    method: GET
+    auth:
+      required: true
+      roles:
+        - admin
+        - operator
+    path_params:
+      run_id:
+        type: string
+        required: true
+        meaning: 分析运行 ID
+    query_params: {}
+    request_body: null
+    response_body:
+      code: 0
+      message: success
+      data:
+        run_id: string
+        config_id: string
+        status: pending | running | success | failed | canceled
+        window_start: datetime
+        window_end: datetime
+        config_snapshot:
+          summary_scope_mode: flat | customer_grouped
+          mailbox_ids: list[string] | null
+          include_statuses: list[archived | failed] | null
+          include_unidentified_senders: boolean
+          top_n_per_customer: integer
+          customer_analysis_mode: basic | ai
+        result_payload:
+          overview:
+            total_records: integer
+            matched_customer_count: integer
+            unidentified_record_count: integer
+            failed_record_count: integer
+            archived_record_count: integer
+            ai_fallback_used: boolean
+          customers:
+            - customer_name: string
+              sender_count: integer
+              record_count: integer
+              high_priority_count: integer
+              issue_categories:
+                - category: string
+                  count: integer
+                  sample_subjects: list[string]
+              top_records:
+                - archive_id: string
+                  message_id: string
+                  sender_email: string | null
+                  subject: string | null
+                  summary: string | null
+                  priority: string | null
+                  risk_tags: list[string] | null
+                  received_at: datetime | null
+          unidentified:
+            record_count: integer
+            senders:
+              - sender_email: string | null
+                record_count: integer
+                sample_subjects: list[string]
+          summary_markdown: string
+        error_message: string | null
+        created_at: datetime
+        started_at: datetime | null
+        finished_at: datetime | null
+    field_meanings:
+      config_snapshot: 分析运行时实际采用的配置快照，用于复盘和发送追踪
+      result_payload: 首期用 JSON 持久化完整客户归类结果
+    idempotency: 查询接口，无副作用
+    errors:
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限访问该分析结果
+      - code: 40401
+        message: 分析运行不存在
+      - code: 50001
+        message: 系统异常
+    compatibility: 新增接口，向后兼容
+
+  - name: 手动发送汇总邮件
+    endpoint: /summary-configs/{config_id}/send
+    method: POST
+    auth:
+      required: true
+      roles:
+        - admin
+        - operator
+    path_params:
+      config_id:
+        type: string
+        required: true
+        meaning: 汇总配置 ID
+    query_params: {}
+    request_body:
+      analysis_run_id: string | null
+      start_time: string | null
+      end_time: string | null
+    response_body:
+      code: 0
+      message: success
+      data:
+        send_id: string
+        status: pending
+    field_meanings:
+      analysis_run_id: customer_grouped 模式下必填，且必须引用 success 状态的分析运行
+      start_time: 仅旧 flat 模式兼容路径可用
+      end_time: 仅旧 flat 模式兼容路径可用
+    idempotency: customer_grouped 模式以 config_id + analysis_run_id 为核心发送幂等维度；flat 模式保留原 config_id + time window 幂等语义
+    errors:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限访问该配置范围
+      - code: 40401
+        message: 汇总配置或分析运行不存在
+      - code: 40901
+        message: 分析运行状态不允许发送或当前已有进行中的发送任务
+      - code: 50001
+        message: 系统异常
+    compatibility: 兼容迁移接口；customer_grouped 模式必须走 analysis_run_id，旧 flat 模式暂时兼容 start_time/end_time
+
+  - name: 查询汇总邮件发送记录
+    endpoint: /summary-sends
+    method: GET
+    auth:
+      required: true
+      roles:
+        - admin
+        - operator
+    path_params: {}
+    query_params:
+      config_id:
+        type: string | null
+        required: false
+      status:
+        type: enum(pending|success|failed) | null
+        required: false
+      page:
+        type: integer
+        required: false
+        default: 1
+      page_size:
+        type: integer
+        required: false
+        default: 20
+    request_body: null
+    response_body:
+      code: 0
+      message: success
+      data:
+        items:
+          - send_id: string
+            config_id: string
+            analysis_run_id: string | null
+            subject: string | null
+            recipient_count: integer
+            status: pending | success | failed
+            sent_at: datetime | null
+            error_message: string | null
+        pagination:
+          total: integer
+          page: integer
+          page_size: integer
+    field_meanings:
+      analysis_run_id: 若本次发送来自 customer_grouped 模式，则显式指向使用的分析运行
+    idempotency: 查询接口，无副作用
+    errors:
+      - code: 40101
+        message: 未登录
+      - code: 50001
+        message: 系统异常
+    compatibility: 对既有发送记录响应做扩展，新增 analysis_run_id 字段
+
+implementation_notes:
+  backward_compatibility:
+    - 本功能在 sender_profiles 之外，还会扩展既有 /summary-configs 和 /summary-sends 契约
+    - customer_grouped 模式是显式新模式，旧 flat 模式暂时兼容原有发送参数
+    - 若未来移除 start_time/end_time 兼容路径，必须单独出契约 diff 和清退计划
+  logging_requirement:
+    - 发件人档案创建、更新需记录操作日志
+    - 分析运行请求需记录 config_id、时间窗口、analysis_mode、是否降级
+    - 发送请求需记录 config_id、analysis_run_id、发送结果
+  idempotency_keys:
+    - sender_profile_unique_key: match_type + match_value
+    - analysis_run_unique_key: config_id + window_start + window_end + config_snapshot_hash

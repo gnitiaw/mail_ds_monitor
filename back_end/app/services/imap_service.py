@@ -19,6 +19,19 @@ from app.models.mailbox import Mailbox
 logger = logging.getLogger(__name__)
 
 
+def _mark_pull_failure(
+    db: Session,
+    mailbox: Mailbox,
+    status: str,
+    error_message: str,
+) -> None:
+    """回滚当前事务并记录邮箱拉取失败状态。"""
+    db.rollback()
+    mailbox.last_pull_status = status
+    mailbox.last_pull_error = error_message
+    db.commit()
+
+
 class IMAPConnectionError(Exception):
     """IMAP 连接错误。"""
 
@@ -35,16 +48,20 @@ def _decode_header_value(value: str | bytes | None) -> str:
     """解码邮件头字段。"""
     if value is None:
         return ""
-    if isinstance(value, bytes):
-        decoded_parts = decode_header(value.decode("utf-8", errors="replace"))
-        result = []
-        for part, charset in decoded_parts:
-            if isinstance(part, bytes):
-                result.append(part.decode(charset or "utf-8", errors="replace"))
-            else:
-                result.append(part)
-        return "".join(result)
-    return value
+
+    raw_value = (
+        value.decode("utf-8", errors="replace")
+        if isinstance(value, bytes)
+        else value
+    )
+    decoded_parts = decode_header(raw_value)
+    result = []
+    for part, charset in decoded_parts:
+        if isinstance(part, bytes):
+            result.append(part.decode(charset or "utf-8", errors="replace"))
+        else:
+            result.append(part)
+    return "".join(result)
 
 
 def _extract_email_addresses(header_value: str | None) -> list[str]:
@@ -244,14 +261,14 @@ class IMAPClient:
             if status != "OK":
                 raise IMAPFetchError(f"Failed to select folder: {folder}")
 
-            # 搜索邮件
+            # 统一使用 UID 搜索，避免序号结果和 uid fetch 混用导致全量拉取为空。
             if since_uid:
                 # 增量同步：从指定 UID 之后
                 search_criteria = f"UID {since_uid + 1}:*"
                 status, data = self._client.uid("search", None, search_criteria)
             else:
                 # 全量同步
-                status, data = self._client.search(None, "ALL")
+                status, data = self._client.uid("search", None, "ALL")
 
             if status != "OK":
                 raise IMAPFetchError("Failed to search messages")
@@ -401,26 +418,18 @@ def pull_emails_for_mailbox(
     except IMAPConnectionError as e:
         error_message = f"Connection error: {e}"
         logger.error(f"IMAP connection error for mailbox {mailbox.id}: {e}")
-        mailbox.last_pull_status = "connection_error"
-        mailbox.last_pull_error = error_message
-        db.commit()
+        _mark_pull_failure(db, mailbox, "connection_error", error_message)
     except IMAPAuthenticationError as e:
         error_message = f"Authentication error: {e}"
         logger.error(f"IMAP authentication error for mailbox {mailbox.id}: {e}")
-        mailbox.last_pull_status = "auth_error"
-        mailbox.last_pull_error = error_message
-        db.commit()
+        _mark_pull_failure(db, mailbox, "auth_error", error_message)
     except IMAPFetchError as e:
         error_message = f"Fetch error: {e}"
         logger.error(f"IMAP fetch error for mailbox {mailbox.id}: {e}")
-        mailbox.last_pull_status = "fetch_error"
-        mailbox.last_pull_error = error_message
-        db.commit()
+        _mark_pull_failure(db, mailbox, "fetch_error", error_message)
     except Exception as e:
         error_message = f"Unknown error: {e}"
         logger.exception(f"Unknown error pulling emails for mailbox {mailbox.id}")
-        mailbox.last_pull_status = "error"
-        mailbox.last_pull_error = error_message
-        db.commit()
+        _mark_pull_failure(db, mailbox, "error", error_message)
 
     return new_count, existing_count, error_message

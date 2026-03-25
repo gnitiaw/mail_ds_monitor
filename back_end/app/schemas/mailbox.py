@@ -52,3 +52,22 @@ class MailboxListResponse(BaseModel):
     page: int
     page_size: int
     total: int
+
+
+class MailboxProcessRequest(BaseModel):
+    """邮箱已拉取邮件处理请求。"""
+
+    lookback_minutes: int = Field(default=1440, ge=1, le=10080)
+    limit: int = Field(default=50, ge=1, le=500)
+
+
+class MailboxProcessResponse(BaseModel):
+    """邮箱已拉取邮件处理响应。"""
+
+    mailbox_id: str
+    archive_success_count: int
+    archive_failed_count: int
+    archive_skipped_count: int
+    failure_scanned_count: int
+    failure_matched_count: int
+    failure_deduped_count: int

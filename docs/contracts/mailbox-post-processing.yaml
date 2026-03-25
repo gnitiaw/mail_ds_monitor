@@ -1,0 +1,62 @@
+feature: 邮箱已拉取邮件处理
+
+endpoint:
+  method: POST
+  path: /api/v1/mailboxes/{mailbox_id}/process
+
+auth:
+  required: false
+  roles: []
+
+request:
+  headers: {}
+  path_params:
+    mailbox_id:
+      type: string
+      required: true
+      meaning: 要处理的邮箱 ID
+  query: {}
+  body:
+    lookback_minutes:
+      type: integer
+      required: false
+      default: 1440
+      meaning: 失败规则扫描时间窗口，单位分钟
+    limit:
+      type: integer
+      required: false
+      default: 50
+      meaning: 单次处理的待提取邮件上限
+
+response:
+  success:
+    code: 0
+    message: success
+    data:
+      mailbox_id: string
+      archive_success_count: integer
+      archive_failed_count: integer
+      archive_skipped_count: integer
+      failure_scanned_count: integer
+      failure_matched_count: integer
+      failure_deduped_count: integer
+
+errors:
+  - code: 40001
+    message: 参数错误
+  - code: 40401
+    message: 邮箱不存在
+  - code: 40901
+    message: 邮箱已禁用
+  - code: 50001
+    message: 系统异常
+
+rules:
+  idempotency: 允许重复提交；归档与失败队列分别按既有唯一键防重
+  compatibility: 新增接口，向后兼容
+  logging: 建议记录处理统计与异常
+
+notes:
+  enum_definitions: {}
+  date_format: ISO8601
+  null_handling: 响应统计字段始终返回数字
