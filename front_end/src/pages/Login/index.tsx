@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Card, Typography, message } from 'antd';
+import { Form, Input, Button, Card, Typography } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../../api/auth';
+import { appMessage } from '../../utils/appMessage';
 
 const { Title } = Typography;
 
@@ -16,7 +17,7 @@ const Login: React.FC = () => {
       const res = await authApi.login(values);
       localStorage.setItem('token', res.access_token);
       localStorage.setItem('user', JSON.stringify(res.user));
-      message.success('登录成功');
+      appMessage.success('登录成功');
       navigate('/failure-queue', { replace: true });
     } catch {
       // Error handled by interceptor
@@ -35,7 +36,7 @@ const Login: React.FC = () => {
     }}>
       <Card 
         style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-        bodyStyle={{ padding: '32px' }}
+        styles={{ body: { padding: '32px' } }}
       >
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <Title level={3}>邮件监控系统登录</Title>

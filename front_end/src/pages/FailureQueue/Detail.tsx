@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Descriptions, Tag, Button, Space, Typography, Spin, message, Result } from 'antd';
+import { Card, Descriptions, Tag, Button, Space, Typography, Spin, Result } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
 import { failureApi } from '../../api/failure';
 import type { FailureQueueDetail } from '../../api/failure';
 import dayjs from 'dayjs';
 import DOMPurify from 'dompurify';
+import { appMessage } from '../../utils/appMessage';
 
 const { Title, Text } = Typography;
 
@@ -52,7 +53,7 @@ const FailureQueueDetailView: React.FC = () => {
     try {
       setActionLoading(true);
       await failureApi.updateStatus(id, newStatus);
-      message.success('状态更新成功');
+      appMessage.success('状态更新成功');
       fetchDetail();
     } catch {
       // Error handled by interceptor

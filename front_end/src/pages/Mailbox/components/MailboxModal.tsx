@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, Input, InputNumber, Select, Switch, message, Typography } from 'antd';
+import { Modal, Form, Input, InputNumber, Select, Switch, Typography } from 'antd';
 import { createMailbox, updateMailbox } from '../../../api/mailbox';
 import type { Mailbox } from '../../../api/types';
+import { appMessage } from '../../../utils/appMessage';
 
 interface MailboxModalProps {
   visible: boolean;
@@ -44,7 +45,14 @@ const MailboxModal: React.FC<MailboxModalProps> = ({ visible, mailbox, onCancel,
 
       if (mailbox) {
         // Edit mode - only send fields defined in update contract
-        const updatePayload: any = {
+        const updatePayload: {
+          name: string;
+          host: string;
+          port: number;
+          status: 'enabled' | 'disabled';
+          folder?: string;
+          password?: string;
+        } = {
           name: values.name,
           host: values.host,
           port: values.port,
@@ -56,10 +64,10 @@ const MailboxModal: React.FC<MailboxModalProps> = ({ visible, mailbox, onCancel,
         }
 
         await updateMailbox(mailbox.id, updatePayload);
-        message.success('邮箱更新成功');
+        appMessage.success('邮箱更新成功');
       } else {
         await createMailbox(payload);
-        message.success('邮箱创建成功');
+        appMessage.success('邮箱创建成功');
       }
       onSuccess();
     } catch {
@@ -76,7 +84,7 @@ const MailboxModal: React.FC<MailboxModalProps> = ({ visible, mailbox, onCancel,
       onOk={handleOk}
       onCancel={onCancel}
       confirmLoading={loading}
-      destroyOnClose
+      destroyOnHidden
       width={600}
     >
       <Form

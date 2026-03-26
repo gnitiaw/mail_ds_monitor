@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Tag, Button, Space, Form, Input, Select, Modal, message, Tabs } from 'antd';
+import { Card, Table, Tag, Button, Space, Form, Input, Select, Modal, Tabs } from 'antd';
 import type { TablePaginationConfig } from 'antd';
 import { senderApi } from '../../api/sender';
 import type { SenderCandidate, SenderProfile } from '../../api/types';
 import dayjs from 'dayjs';
+import { appMessage } from '../../utils/appMessage';
 
 const { Option } = Select;
 
@@ -75,10 +76,10 @@ const SenderList: React.FC = () => {
       const values = await modalForm.validateFields();
       if (editingId) {
         await senderApi.updateProfile(editingId, values);
-        message.success('更新成功');
+        appMessage.success('更新成功');
       } else {
         await senderApi.createProfile(values);
-        message.success('创建成功');
+        appMessage.success('创建成功');
       }
       setModalVisible(false);
       fetchData();
@@ -171,28 +172,40 @@ const SenderList: React.FC = () => {
         title="发件人管理"
         extra={activeTab === 'profiles' && !isOperator && <Button type="primary" onClick={() => openModal()}>新建发件人</Button>}
       >
-        <Tabs activeKey={activeTab} onChange={setActiveTab}>
-          <Tabs.TabPane tab="已建档发件人" key="profiles">
-            <Table
-              columns={profileColumns}
-              dataSource={profiles}
-              rowKey="profile_id"
-              loading={loading}
-              pagination={{ ...pagination, total, showSizeChanger: true, showTotal: t => `共 ${t} 条` }}
-              onChange={handleTableChange}
-            />
-          </Tabs.TabPane>
-          <Tabs.TabPane tab="候选发件人" key="candidates">
-            <Table
-              columns={candidateColumns}
-              dataSource={candidates}
-              rowKey="sender_email"
-              loading={loading}
-              pagination={{ ...pagination, total, showSizeChanger: true, showTotal: t => `共 ${t} 条` }}
-              onChange={handleTableChange}
-            />
-          </Tabs.TabPane>
-        </Tabs>
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          items={[
+            {
+              key: 'profiles',
+              label: '已建档发件人',
+              children: (
+                <Table
+                  columns={profileColumns}
+                  dataSource={profiles}
+                  rowKey="profile_id"
+                  loading={loading}
+                  pagination={{ ...pagination, total, showSizeChanger: true, showTotal: t => `共 ${t} 条` }}
+                  onChange={handleTableChange}
+                />
+              ),
+            },
+            {
+              key: 'candidates',
+              label: '候选发件人',
+              children: (
+                <Table
+                  columns={candidateColumns}
+                  dataSource={candidates}
+                  rowKey="sender_email"
+                  loading={loading}
+                  pagination={{ ...pagination, total, showSizeChanger: true, showTotal: t => `共 ${t} 条` }}
+                  onChange={handleTableChange}
+                />
+              ),
+            },
+          ]}
+        />
       </Card>
 
       <Modal
@@ -200,7 +213,7 @@ const SenderList: React.FC = () => {
         open={modalVisible}
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={modalForm} layout="vertical">
           <Form.Item name="match_type" label="匹配模式" rules={[{ required: true }]}>

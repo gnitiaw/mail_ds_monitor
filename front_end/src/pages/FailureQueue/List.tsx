@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Tag, Button, Space, Form, Input, Select, message, Modal } from 'antd';
+import { Card, Table, Tag, Button, Space, Form, Input, Select, Modal } from 'antd';
 import type { TablePaginationConfig } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { failureApi } from '../../api/failure';
 import type { FailureQueueItem, FailureQueueStatus } from '../../api/failure';
 import dayjs from 'dayjs';
+import { appMessage } from '../../utils/appMessage';
 
 const { Option } = Select;
 
@@ -81,7 +82,7 @@ const FailureQueueList: React.FC = () => {
         mailbox_ids: values.mailbox_ids,
         lookback_minutes: values.lookback_minutes,
       });
-      message.success('补跑任务已提交');
+      appMessage.success('补跑任务已提交');
       setReplayModalVisible(false);
       fetchData(); // 刷新一下
     } catch {

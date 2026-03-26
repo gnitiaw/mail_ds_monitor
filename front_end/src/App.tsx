@@ -1,8 +1,9 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ConfigProvider } from 'antd';
+import { App as AntdApp, ConfigProvider } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import MainLayout from './components/Layout';
+import AppMessageBridge from './components/AppMessageBridge';
 import AuthRoute from './components/AuthRoute';
 import Login from './pages/Login';
 import MailboxList from './pages/Mailbox/List';
@@ -59,30 +60,33 @@ const App: React.FC = () => {
         }
       }}
     >
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          
-          <Route path="/" element={<AuthRoute />}>
-            <Route element={<MainLayout />}>
-              <Route index element={<Navigate to="/failure-queue" replace />} />
-              <Route path="failure-queue" element={<FailureQueueList />} />
-              <Route path="failure-queue/:id" element={<FailureQueueDetailView />} />
-              <Route path="mail-messages" element={<RawMailList />} />
-              <Route path="mail-messages/:id" element={<RawMailDetailView />} />
-              
-              {/* Existing Routes */}
-              <Route path="mailboxes" element={<MailboxList />} />
-              <Route path="archives" element={<ArchiveList />} />
-              <Route path="archives/:id" element={<ArchiveDetail />} />
-              <Route path="senders" element={<SenderList />} />
-              <Route path="summary-configs" element={<SummaryConfigList />} />
-              <Route path="summary-configs/:configId/analysis-runs" element={<AnalysisRuns />} />
-              <Route path="summary-sends" element={<SummarySendRecords />} />
+      <AntdApp>
+        <AppMessageBridge />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            
+            <Route path="/" element={<AuthRoute />}>
+              <Route element={<MainLayout />}>
+                <Route index element={<Navigate to="/failure-queue" replace />} />
+                <Route path="failure-queue" element={<FailureQueueList />} />
+                <Route path="failure-queue/:id" element={<FailureQueueDetailView />} />
+                <Route path="mail-messages" element={<RawMailList />} />
+                <Route path="mail-messages/:id" element={<RawMailDetailView />} />
+                
+                {/* Existing Routes */}
+                <Route path="mailboxes" element={<MailboxList />} />
+                <Route path="archives" element={<ArchiveList />} />
+                <Route path="archives/:id" element={<ArchiveDetail />} />
+                <Route path="senders" element={<SenderList />} />
+                <Route path="summary-configs" element={<SummaryConfigList />} />
+                <Route path="summary-configs/:configId/analysis-runs" element={<AnalysisRuns />} />
+                <Route path="summary-sends" element={<SummarySendRecords />} />
+              </Route>
             </Route>
-          </Route>
-        </Routes>
-      </BrowserRouter>
+          </Routes>
+        </BrowserRouter>
+      </AntdApp>
     </ConfigProvider>
   );
 };

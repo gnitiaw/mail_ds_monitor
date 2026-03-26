@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, Table, Tag, Button, Space, Typography, message, Modal, Form, DatePicker, Drawer, Checkbox } from 'antd';
+import { Card, Table, Tag, Button, Space, Typography, Modal, Form, DatePicker, Drawer, Checkbox } from 'antd';
 import { SyncOutlined, EyeOutlined, SendOutlined } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { TablePaginationConfig } from 'antd';
 import { summaryApi, sendSummary } from '../../api/summary';
 import type { AnalysisRun, AnalysisRunDetail } from '../../api/types';
 import dayjs from 'dayjs';
+import { appMessage } from '../../utils/appMessage';
 
 const { RangePicker } = DatePicker;
 
@@ -68,7 +69,7 @@ const AnalysisRuns: React.FC = () => {
         window_end: values.timeRange[1].toISOString(),
         force_rerun: values.force_rerun,
       });
-      message.success('已触发分析运行');
+      appMessage.success('已触发分析运行');
       setCreateVisible(false);
       fetchData(1);
     } catch {
@@ -95,7 +96,7 @@ const AnalysisRuns: React.FC = () => {
     if (!configId) return;
     try {
       await sendSummary(configId, { analysis_run_id: runId });
-      message.success('已触发发送任务');
+      appMessage.success('已触发发送任务');
     } catch {
       // handled
     }
@@ -166,7 +167,7 @@ const AnalysisRuns: React.FC = () => {
         onOk={handleCreateOk}
         onCancel={() => setCreateVisible(false)}
         confirmLoading={createLoading}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={createForm} layout="vertical">
           <Form.Item name="timeRange" label="分析时间窗口" rules={[{ required: true }]}>
@@ -180,7 +181,7 @@ const AnalysisRuns: React.FC = () => {
 
       <Drawer
         title="分析运行结果"
-        width={700}
+        size={700}
         open={detailVisible}
         onClose={() => setDetailVisible(false)}
       >

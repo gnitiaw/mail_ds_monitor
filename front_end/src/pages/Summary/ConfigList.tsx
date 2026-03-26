@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, message, Card, Typography } from 'antd';
+import { Table, Button, Space, Tag, Card, Typography } from 'antd';
 import { PlusOutlined, SendOutlined, ProfileOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { getSummaryConfigs, sendSummary } from '../../api/summary';
 import type { SummaryConfig } from '../../api/types';
 import ConfigModal from './components/ConfigModal';
 import SendModal from './components/SendModal';
+import { appMessage } from '../../utils/appMessage';
 
 const ConfigList: React.FC = () => {
   const [data, setData] = useState<SummaryConfig[]>([]);
@@ -36,7 +37,7 @@ const ConfigList: React.FC = () => {
   const handleSend = async (configId: string, timeRange: [string, string]) => {
     try {
       await sendSummary(configId, { start_time: timeRange[0], end_time: timeRange[1] });
-      message.success('已触发发送任务');
+      appMessage.success('已触发发送任务');
       setSendModalVisible(false);
     } catch {
       // handled
