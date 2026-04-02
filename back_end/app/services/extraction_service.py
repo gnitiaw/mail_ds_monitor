@@ -38,7 +38,7 @@ def extract_and_archive(
     existing_archive = db.scalar(
         select(ArchiveRecord).where(ArchiveRecord.message_id == mail_message.id)
     )
-    if existing_archive:
+    if existing_archive and existing_archive.status != ProcessingStatus.FAILED.value:
         logger.info(f"Archive record already exists for message {mail_message.id}")
         return existing_archive
 
@@ -48,14 +48,31 @@ def extract_and_archive(
     body = mail_message.body_text or mail_message.body_html or ""
 
     # 创建归档记录（初始状态）
-    archive = ArchiveRecord(
-        mailbox_id=mail_message.mailbox_id,
-        message_id=mail_message.id,
-        status=ProcessingStatus.PENDING.value,
-        received_at=mail_message.received_at,
-    )
-    db.add(archive)
-    db.flush()  # 获取 ID
+    if existing_archive:
+        archive = existing_archive
+        archive.status = ProcessingStatus.PENDING.value
+        archive.summary = None
+        archive.business_type = None
+        archive.priority = None
+        archive.risk_tags = None
+        archive.action_items = None
+        archive.entities = None
+        archive.extracted_fields = None
+        archive.confidence = None
+        archive.model_name = None
+        archive.prompt_version = None
+        archive.extraction_error = None
+        archive.received_at = mail_message.received_at
+    else:
+        archive = ArchiveRecord(
+            mailbox_id=mail_message.mailbox_id,
+            message_id=mail_message.id,
+            status=ProcessingStatus.PENDING.value,
+            received_at=mail_message.received_at,
+        )
+        db.add(archive)
+
+    db.flush()
 
     try:
         # 调用 LLM 提取
@@ -63,7 +80,8 @@ def extract_and_archive(
             logger.warning(f"LLM disabled, skipping extraction for message {mail_message.id}")
             archive.status = ProcessingStatus.ARCHIVED.value
             archive.extraction_error = "LLM extraction disabled"
-            db.commit()
+            mail_message.extraction_status = ExtractionStatus.SUCCESS.value
+            mail_message.extraction_error = None
             return archive
 
         client = LLMClientSync()
@@ -90,7 +108,6 @@ def extract_and_archive(
         mail_message.extraction_status = ExtractionStatus.SUCCESS.value
         mail_message.extraction_error = None
 
-        db.commit()
         logger.info(f"Successfully extracted archive for message {mail_message.id}")
 
     except LLMError as e:
@@ -99,15 +116,12 @@ def extract_and_archive(
         archive.extraction_error = str(e)
         mail_message.extraction_status = ExtractionStatus.FAILED.value
         mail_message.extraction_error = str(e)
-        db.commit()
-
     except Exception as e:
         logger.exception(f"Unexpected error extracting message {mail_message.id}")
         archive.status = ProcessingStatus.FAILED.value
         archive.extraction_error = f"Unexpected error: {e}"
         mail_message.extraction_status = ExtractionStatus.FAILED.value
         mail_message.extraction_error = str(e)
-        db.commit()
 
     return archive
 
@@ -171,12 +185,14 @@ def extract_pending_messages(
     for message in messages:
         try:
             archive = extract_and_archive(db, message)
+            db.commit()
             if archive.status == ProcessingStatus.ARCHIVED.value:
                 success_count += 1
             else:
                 failed_count += 1
         except Exception as e:
             logger.exception(f"Failed to extract message {message.id}")
+            db.rollback()
             failed_count += 1
 
     return success_count, failed_count, skipped_count

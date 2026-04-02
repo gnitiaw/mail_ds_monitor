@@ -4,24 +4,23 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.services.extraction_retry_service import MAX_EXTRACTION_RETRIES
+
 
 class MailPullRequest(BaseModel):
     """手动触发拉取请求。"""
-
     force_full_sync: bool = Field(default=False, description="是否强制全量同步")
 
 
 class MailPullResponse(BaseModel):
-    """拉取任务响应。"""
-
+    """拉取任务响应"""
     job_id: str = Field(description="拉取任务 ID")
     mailbox_id: str = Field(description="邮箱配置 ID")
     status: str = Field(description="任务状态")
 
 
 class MailMessageResponse(BaseModel):
-    """邮件消息响应（用于归档列表）。"""
-
+    """邮件消息响应（用于归档列表）"""
     model_config = ConfigDict(from_attributes=True)
 
     archive_id: str = Field(description="归档记录 ID")
@@ -38,8 +37,7 @@ class MailMessageResponse(BaseModel):
 
 
 class ArchiveListResponse(BaseModel):
-    """归档列表分页响应。"""
-
+    """归档列表分页响应"""
     items: list[MailMessageResponse]
     page: int
     page_size: int
@@ -47,8 +45,7 @@ class ArchiveListResponse(BaseModel):
 
 
 class ArchiveDetailResponse(BaseModel):
-    """归档详情响应。"""
-
+    """归档详情响应"""
     model_config = ConfigDict(from_attributes=True)
 
     archive_id: str = Field(description="归档记录 ID")
@@ -71,8 +68,7 @@ class ArchiveDetailResponse(BaseModel):
 
 
 class RawMailListItem(BaseModel):
-    """原始邮件列表项。"""
-
+    """原始邮件列表项"""
     model_config = ConfigDict(from_attributes=True)
 
     message_id: str = Field(description="原始邮件记录 ID")
@@ -85,22 +81,29 @@ class RawMailListItem(BaseModel):
     received_at: datetime | None
     parse_status: str
     extraction_status: str
+    parse_error: str | None = Field(description="解析错误信息")
+    extraction_error: str | None = Field(description="提取错误信息")
+    retry_count: int = Field(default=0, description="重试次数")
+    max_retries: int = Field(default=MAX_EXTRACTION_RETRIES, description="最大允许重试次数")
     has_attachments: bool
     pulled_at: datetime
 
 
 class RawMailListResponse(BaseModel):
-    """原始邮件列表分页响应。"""
-
+    """原始邮件列表分页响应"""
     items: list[RawMailListItem]
     page: int
     page_size: int
     total: int
 
 
-class RawMailDetailResponse(BaseModel):
-    """原始邮件详情响应。"""
+class BatchRetryRequest(BaseModel):
+    """批量重试请求"""
+    message_ids: list[str] = Field(..., min_length=1, max_length=50, description="消息 ID 列表")
 
+
+class RawMailDetailResponse(BaseModel):
+    """原始邮件详情响应"""
     model_config = ConfigDict(from_attributes=True)
 
     message_id: str
@@ -121,6 +124,9 @@ class RawMailDetailResponse(BaseModel):
     extraction_status: str
     parse_error: str | None
     extraction_error: str | None
+    retry_count: int = Field(default=0, description="重试次数")
+    max_retries: int = Field(default=MAX_EXTRACTION_RETRIES, description="最大允许重试次数")
+    last_retry_at: datetime | None
     received_at: datetime | None
     pulled_at: datetime
     body_text: str | None

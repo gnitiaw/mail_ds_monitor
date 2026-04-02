@@ -1,0 +1,358 @@
+feature: 原始邮件提取失败重试
+
+endpoints:
+  - name: 原始邮件列表字段扩展
+    endpoint: /api/v1/mail-messages
+    method: GET
+    auth:
+      required: false
+      roles: []
+    path_params: {}
+    query_params:
+      mailbox_id:
+        type: string
+        required: false
+        meaning: 按邮箱筛选
+      keyword:
+        type: string
+        required: false
+        meaning: 按主题或发件人模糊搜索
+      page:
+        type: integer
+        required: false
+        default: 1
+      page_size:
+        type: integer
+        required: false
+        default: 20
+        range: 1..100
+    request_body: null
+    response_body:
+      code: 0
+      message: success
+      data:
+        items:
+          - message_id: string
+            mailbox_id: string
+            internet_message_id: string | null
+            provider_uid: string | null
+            folder: string
+            subject: string | null
+            sender: string | null
+            received_at: ISO8601 | null
+            parse_status: string
+            extraction_status: string
+            parse_error: string | null
+            extraction_error: string | null
+            retry_count: integer
+            max_retries: integer
+            has_attachments: boolean
+            pulled_at: ISO8601
+        page: integer
+        page_size: integer
+        total: integer
+    field_meanings:
+      parse_error: 解析失败原因，无错误时为 null
+      extraction_error: 提取失败原因，无错误时为 null
+      retry_count: 当前邮件已执行的提取重试次数
+      max_retries: 单封邮件允许的最大提取重试次数，当前固定为 3
+    enum_definitions:
+      parse_status:
+        - pending
+        - parsed
+        - failed
+      extraction_status:
+        - pending
+        - success
+        - failed
+    auth_requirements:
+      note: 复用现有原始邮件只读权限模型
+    idempotency: 只读接口，无幂等副作用
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 50001
+        message: 系统异常
+    compatibility: 在原有响应中新增字段，保持向后兼容
+
+  - name: 原始邮件详情字段扩展
+    endpoint: /api/v1/mail-messages/{message_id}
+    method: GET
+    auth:
+      required: false
+      roles: []
+    path_params:
+      message_id:
+        type: string
+        required: true
+        meaning: 原始邮件记录 ID
+    query_params: {}
+    request_body: null
+    response_body:
+      code: 0
+      message: success
+      data:
+        message_id: string
+        mailbox_id: string
+        internet_message_id: string | null
+        provider_uid: string | null
+        folder: string
+        subject: string | null
+        sender_name: string | null
+        sender_email: string | null
+        recipients_to: string[] | null
+        recipients_cc: string[] | null
+        recipients_bcc: string[] | null
+        reply_to: string[] | null
+        flags: string[] | null
+        has_attachments: boolean
+        parse_status: string
+        extraction_status: string
+        parse_error: string | null
+        extraction_error: string | null
+        retry_count: integer
+        max_retries: integer
+        last_retry_at: ISO8601 | null
+        received_at: ISO8601 | null
+        pulled_at: ISO8601
+        body_text: string | null
+        body_html: string | null
+    field_meanings:
+      retry_count: 当前邮件已执行的提取重试次数
+      max_retries: 单封邮件允许的最大提取重试次数，当前固定为 3
+      last_retry_at: 最近一次触发提取重试的时间，未重试过为 null
+    enum_definitions:
+      parse_status:
+        - pending
+        - parsed
+        - failed
+      extraction_status:
+        - pending
+        - success
+        - failed
+    auth_requirements:
+      note: 复用现有原始邮件详情权限模型
+    idempotency: 只读接口，无幂等副作用
+    error_codes:
+      - code: 40401
+        message: 原始邮件不存在
+      - code: 50001
+        message: 系统异常
+    compatibility: 在原有响应中新增字段，保持向后兼容
+
+  - name: 单条提取重试
+    endpoint: /api/v1/mail-messages/{message_id}/retry-extraction
+    method: POST
+    auth:
+      required: true
+      roles:
+        - admin
+        - operator
+    path_params:
+      message_id:
+        type: string
+        required: true
+        meaning: 需要重试提取的原始邮件 ID
+    query_params: {}
+    request_body: null
+    response_body:
+      code: 0
+      message: success
+      data:
+        job_id: string
+        status: string
+        reused_existing_job: boolean
+        requested_count: integer
+        max_retries: integer
+    field_meanings:
+      job_id: 后台重试任务 ID
+      status: 受理时的任务状态，固定为 pending 或复用中的 running/pending
+      reused_existing_job: 是否复用了已有活跃任务
+      requested_count: 本次请求涉及的邮件数量，单条接口固定为 1
+      max_retries: 单封邮件允许的最大提取重试次数，当前固定为 3
+    enum_definitions:
+      status:
+        - pending
+        - running
+    auth_requirements:
+      note: 必须登录；operator 只能重试其 mailbox_scope_ids 范围内的邮件
+    idempotency: 对同一 message_id 的活跃任务受理具备去重能力；若已有 pending/running 任务则返回同一 job_id
+    error_codes:
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限访问目标邮箱
+      - code: 40401
+        message: 邮件不存在
+      - code: 50001
+        message: 系统异常
+    compatibility: 接口语义从同步返回最终结果改为异步受理；调用方必须改为轮询任务状态
+
+  - name: 批量提取重试
+    endpoint: /api/v1/mail-messages/batch-retry-extraction
+    method: POST
+    auth:
+      required: true
+      roles:
+        - admin
+        - operator
+    path_params: {}
+    query_params: {}
+    request_body:
+      message_ids:
+        type: string[]
+        required: true
+        min_items: 1
+        max_items: 50
+        meaning: 需要重试提取的原始邮件 ID 列表
+    response_body:
+      code: 0
+      message: success
+      data:
+        job_id: string
+        status: string
+        reused_existing_job: boolean
+        requested_count: integer
+        max_retries: integer
+    field_meanings:
+      job_id: 后台重试任务 ID
+      status: 受理时的任务状态，固定为 pending 或复用中的 running/pending
+      reused_existing_job: 是否复用了已有活跃任务
+      requested_count: 本次请求提交的 message_id 数量
+      max_retries: 单封邮件允许的最大提取重试次数，当前固定为 3
+    enum_definitions:
+      status:
+        - pending
+        - running
+    auth_requirements:
+      note: 必须登录；operator 只能重试其 mailbox_scope_ids 范围内的邮件；若请求中含 scope 外邮箱直接拒绝
+    idempotency: 对相同排序后的 message_ids + requested_by + retry_type 生成稳定 task_key；若已有 pending/running 任务则返回同一 job_id
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限访问目标邮箱
+      - code: 40401
+        message: 邮件不存在
+      - code: 50001
+        message: 系统异常
+    compatibility: 接口语义从同步返回批量结果改为异步受理；调用方必须改为轮询任务状态
+
+  - name: 提取重试任务查询
+    endpoint: /api/v1/task-logs/{job_id}
+    method: GET
+    auth:
+      required: true
+      roles:
+        - admin
+        - operator
+    path_params:
+      job_id:
+        type: string
+        required: true
+        meaning: 后台重试任务 ID
+    query_params: {}
+    request_body: null
+    response_body:
+      code: 0
+      message: success
+      data:
+        job_id: string
+        task_type: string
+        status: string
+        task_key: string | null
+        related_mailbox_id: string | null
+        related_message_id: string | null
+        payload:
+          message_ids: string[]
+          mailbox_ids: string[]
+          requested_by: string
+          max_retries: integer
+        result:
+          total_requested: integer
+          succeeded_count: integer
+          failed_count: integer
+          already_max_retries: integer
+          not_failed_status: integer
+          not_found: integer
+          max_retries: integer
+          details:
+            - message_id: string
+              status: string
+              retry_count: integer
+              max_retries: integer
+              error_message: string | null
+        error_message: string | null
+        started_at: ISO8601 | null
+        finished_at: ISO8601 | null
+        executed_at: ISO8601
+    field_meanings:
+      status: 后台任务当前状态
+      payload: 受理时的原始任务参数
+      result: 执行完成后的聚合结果；未完成时可为 null
+      details.status: 单条消息在本次任务中的处理结果
+    enum_definitions:
+      status:
+        - pending
+        - running
+        - success
+        - failed
+      details.status:
+        - success
+        - failed
+        - not_failed_status
+        - max_retries_reached
+        - not_found
+    auth_requirements:
+      note: 必须登录；operator 只能查询其 mailbox scope 内的任务
+    idempotency: 只读接口，无幂等副作用
+    error_codes:
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限访问目标任务
+      - code: 40401
+        message: 任务不存在
+      - code: 50001
+        message: 系统异常
+    compatibility: 新增接口，不影响原有任务模型或读接口
+
+contract_diff:
+  compared_with:
+    - docs/contracts/raw-mail-visibility.yaml
+    - docs/contracts/raw-mail-extraction-retry.yaml@initial-sync-draft
+  changes:
+    - 原始邮件列表响应新增 max_retries，并保留 parse_error、extraction_error、retry_count 扩展
+    - 原始邮件详情响应新增 max_retries，并保留 retry_count、last_retry_at 扩展
+    - 单条重试接口从同步结果改为异步受理，返回 TaskLogAcceptedResponse
+    - 批量重试接口从同步批量结果改为异步受理，返回 TaskLogAcceptedResponse
+    - 新增任务查询接口 /api/v1/task-logs/{job_id}
+    - 单条和批量重试接口明确要求登录并校验 mailbox scope
+    - 单条和批量重试接口明确 task_key 去重语义
+
+impact_analysis:
+  frontend:
+    - 原始邮件列表和详情必须改为基于 job_id 轮询任务状态
+    - 前端不再硬编码最大重试次数，需要读取服务端返回的 max_retries
+    - 批量结果提示改由 task log result 生成
+  backend:
+    - 需要复用 TaskLog，而不是直接在接口内同步执行提取
+    - 需要补任务查询接口、task_key 去重、调度器恢复逻辑
+    - 需要将 extract_and_archive 的事务提交收回到外层编排
+  testing:
+    - 需要新增异步受理、任务查询、权限、去重和 worker 结果回归测试
+    - 需要新增前端轮询测试
+
+compatibility_notes:
+  backward_compatibility: 原始邮件列表和详情只新增字段，不删除旧字段；查询接口仍兼容旧客户端
+  breaking_change_scope:
+    - 单条重试接口
+    - 批量重试接口
+  client_impact:
+    - 旧客户端若仍按同步结果解析重试接口，会失配
+    - 新客户端必须按 job_id + /task-logs/{job_id} 轮询模式接入
+  migration_note:
+    - 数据库需已包含 mail_messages.retry_count 和 mail_messages.last_retry_at
+    - 运行环境需启用 APScheduler SQLAlchemyJobStore 以支持恢复

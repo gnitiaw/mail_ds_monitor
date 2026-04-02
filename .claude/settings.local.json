@@ -13,7 +13,20 @@
       "Bash(where gh:*)",
       "Bash(git config:*)",
       "Bash(echo $GITHUB_TOKEN)",
-      "Bash(start:*)"
+      "Bash(start:*)",
+      "Bash(curl -s http://localhost:8000/api/v1/health)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(.venv/Scripts/python.exe -m py_compile app/schemas/mail_message.py app/api/v1/routes/mail_messages.py)",
+      "Bash(npx tsc:*)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/ -v --tb=short)",
+      "Bash(.venv/Scripts/python.exe -m pytest app/tests/test_mail_messages_api.py -v --tb=short)",
+      "Bash(.venv/Scripts/python.exe -m py_compile app/api/v1/routes/mail_messages.py)",
+      "Bash(.venv/Scripts/python.exe -m pytest app/tests/ -v --tb=short)",
+      "Bash(curl -X POST http://localhost:8000/api/v1/mail-messages/batch-retry-extraction -H \"Content-Type: application/json\" -d '{\"\"message_ids\"\": [\"\"test\"\"]}')",
+      "Bash(curl -s http://localhost:8000/openapi.json)",
+      "Bash(tasklist)",
+      "Bash(curl -s http://localhost:8000/api/v1/mail-messages)",
+      "Bash(curl:*)"
     ]
   }
 }

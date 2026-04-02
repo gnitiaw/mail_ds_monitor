@@ -17,6 +17,7 @@ export type MessageProcessStatus = 'pending' | 'parsed' | 'archived' | 'failed';
 export type SummaryScheduleType = 'daily';
 export type SummarySendStatus = 'pending' | 'success' | 'failed';
 export type ExtractionStatus = 'pending' | 'success' | 'failed';
+export type TaskStatus = 'pending' | 'running' | 'success' | 'failed';
 
 export interface Mailbox {
   id: string;
@@ -65,6 +66,10 @@ export interface RawMailItem {
   received_at?: string | null;
   parse_status: MessageProcessStatus;
   extraction_status: ExtractionStatus;
+  parse_error?: string | null;
+  extraction_error?: string | null;
+  retry_count: number;
+  max_retries: number;
   has_attachments: boolean;
   pulled_at: string;
 }
@@ -79,6 +84,7 @@ export interface RawMailDetail extends RawMailItem {
   flags?: string[] | null;
   parse_error?: string | null;
   extraction_error?: string | null;
+  last_retry_at?: string | null;
   body_text?: string | null;
   body_html?: string | null;
 }
@@ -175,4 +181,46 @@ export interface AnalysisRunDetail extends AnalysisRun {
   config_snapshot: Record<string, unknown>;
   result_payload: AnalysisRunPayload | null;
   started_at: string | null;
+}
+
+export interface ExtractionRetryTaskDetail {
+  message_id: string;
+  status: string;
+  retry_count: number;
+  max_retries: number;
+  error_message?: string | null;
+}
+
+export interface ExtractionRetryTaskResult {
+  total_requested: number;
+  succeeded_count: number;
+  failed_count: number;
+  already_max_retries: number;
+  not_failed_status: number;
+  not_found: number;
+  max_retries: number;
+  details: ExtractionRetryTaskDetail[];
+}
+
+export interface TaskLogAcceptedResponse {
+  job_id: string;
+  status: TaskStatus;
+  reused_existing_job: boolean;
+  requested_count: number;
+  max_retries: number;
+}
+
+export interface TaskLogDetail {
+  job_id: string;
+  task_type: string;
+  status: TaskStatus;
+  task_key?: string | null;
+  related_mailbox_id?: string | null;
+  related_message_id?: string | null;
+  payload?: Record<string, unknown> | null;
+  result?: ExtractionRetryTaskResult | null;
+  error_message?: string | null;
+  started_at?: string | null;
+  finished_at?: string | null;
+  executed_at: string;
 }

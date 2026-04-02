@@ -12,6 +12,7 @@ from app.api.v1.routes import (
     sender_profiles,
     summary,
     system,
+    task_logs,
 )
 
 router = APIRouter()
@@ -19,6 +20,7 @@ router.include_router(system.router, tags=["system"])
 router.include_router(auth.router, tags=["auth"])
 router.include_router(mailboxes.router, tags=["mailboxes"])
 router.include_router(mail_messages.router, tags=["mail-messages"])
+router.include_router(task_logs.router, tags=["task-logs"])
 router.include_router(archives.router, tags=["archives"])
 router.include_router(summary.router, tags=["summary-configs"])
 router.include_router(summary.sends_router, tags=["summary-sends"])
