@@ -25,6 +25,7 @@ from app.schemas.mail_message import (
 )
 from app.schemas.task_log import TaskLogAcceptedResponse
 from app.services.extraction_retry_service import MAX_EXTRACTION_RETRIES, create_retry_task
+from app.services.extraction_retry_scheduler import schedule_retry_task
 from app.services.mail_pull_service import MailPullService
 from app.services.mailbox_service import get_mailbox_by_id
 
@@ -113,11 +114,7 @@ def batch_retry_extraction(
         message_ids=message_ids,
     )
 
-    from app.core.scheduler import add_extraction_retry_job, init_scheduler
-
-    init_scheduler()
-    if not reused:
-        add_extraction_retry_job(task_log.id)
+    schedule_retry_task(db, task_log, reused=reused)
 
     return success(
         TaskLogAcceptedResponse(
@@ -188,11 +185,7 @@ def retry_single_extraction(
         message_ids=[message_id],
     )
 
-    from app.core.scheduler import add_extraction_retry_job, init_scheduler
-
-    init_scheduler()
-    if not reused:
-        add_extraction_retry_job(task_log.id)
+    schedule_retry_task(db, task_log, reused=reused)
 
     return success(
         TaskLogAcceptedResponse(

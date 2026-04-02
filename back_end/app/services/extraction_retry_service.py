@@ -6,6 +6,7 @@ import logging
 from datetime import datetime, timezone
 
 from sqlalchemy import create_engine, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.exceptions import NotFoundError
@@ -16,7 +17,9 @@ from app.models.task_log import TaskLog
 from app.models.user import User
 from app.services.extraction_service import extract_and_archive
 from app.services.task_log_service import (
+    acquire_task_lock,
     build_task_key,
+    cleanup_stale_task_lock,
     create_task_log,
     get_active_task_by_key,
     mark_task_failed,
@@ -73,20 +76,56 @@ def create_retry_task(
     if existing:
         return existing, True
 
-    task_log = create_task_log(
+    cleanup_stale_task_lock(
         db,
         task_type=TaskType.AI_EXTRACTION.value,
         task_key=task_key,
-        related_mailbox_id=mailbox_ids[0] if len(mailbox_ids) == 1 else None,
-        related_message_id=normalized_ids[0] if len(normalized_ids) == 1 and normalized_ids[0] in message_map else None,
-        payload={
-            "message_ids": normalized_ids,
-            "mailbox_ids": mailbox_ids,
-            "requested_by": current_user.id,
-            "max_retries": MAX_EXTRACTION_RETRIES,
-        },
     )
-    return task_log, False
+
+    for _ in range(2):
+        try:
+            task_log = create_task_log(
+                db,
+                task_type=TaskType.AI_EXTRACTION.value,
+                task_key=task_key,
+                related_mailbox_id=mailbox_ids[0] if len(mailbox_ids) == 1 else None,
+                related_message_id=normalized_ids[0] if len(normalized_ids) == 1 and normalized_ids[0] in message_map else None,
+                payload={
+                    "message_ids": normalized_ids,
+                    "mailbox_ids": mailbox_ids,
+                    "requested_by": current_user.id,
+                    "max_retries": MAX_EXTRACTION_RETRIES,
+                },
+                commit=False,
+            )
+            acquire_task_lock(
+                db,
+                task_type=TaskType.AI_EXTRACTION.value,
+                task_key=task_key,
+                task_log_id=task_log.id,
+            )
+            db.commit()
+            db.refresh(task_log)
+            return task_log, False
+        except IntegrityError:
+            db.rollback()
+            existing = get_active_task_by_key(
+                db,
+                task_type=TaskType.AI_EXTRACTION.value,
+                task_key=task_key,
+            )
+            if existing:
+                return existing, True
+
+            if cleanup_stale_task_lock(
+                db,
+                task_type=TaskType.AI_EXTRACTION.value,
+                task_key=task_key,
+            ):
+                continue
+            raise
+
+    raise RuntimeError("无法为提取重试任务获取唯一锁")
 
 
 def execute_extraction_retry_async(database_uri: str, job_id: str) -> None:
@@ -219,14 +258,14 @@ def execute_extraction_retry_async(database_uri: str, job_id: str) -> None:
 
         task_log = db.get(TaskLog, job_id)
         if task_log:
-            mark_task_success(db, task_log, result=result)
+            mark_task_success(db, task_log, result=result, release_lock=True)
 
     except Exception as exc:
         logger.exception("Extraction retry task crashed job=%s", job_id)
         db.rollback()
         task_log = db.get(TaskLog, job_id)
         if task_log:
-            mark_task_failed(db, task_log, error_message=str(exc), result=result)
+            mark_task_failed(db, task_log, error_message=str(exc), result=result, release_lock=True)
     finally:
         db.close()
         engine.dispose()

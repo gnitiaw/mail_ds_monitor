@@ -4,8 +4,10 @@ from datetime import datetime, timezone
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.active_task_lock import ActiveTaskLock
 from app.models.archive import ArchiveRecord
 from app.models.enums import ExtractionStatus, ProcessingStatus, TaskStatus, TaskType, UserRole
 from app.models.mail_message import MailMessage
@@ -190,6 +192,26 @@ class TestRetryTaskEndpoints:
         assert response.status_code == 401
         assert response.json()["code"] == 40101
 
+    def test_retry_single_extraction_rejects_missing_authorization_header(
+        self,
+        client: TestClient,
+        db_session: Session,
+        setup_users: dict[str, User | Mailbox],
+    ):
+        message = _create_mail_message(
+            db_session,
+            mailbox=setup_users["mailbox"],
+            subject="missing auth single retry",
+        )
+        db_session.commit()
+
+        response = client.post(
+            f"/api/v1/mail-messages/{message.id}/retry-extraction",
+        )
+
+        assert response.status_code == 401
+        assert response.json()["code"] == 40101
+
     def test_retry_single_extraction_returns_pending_job(
         self,
         client: TestClient,
@@ -229,6 +251,58 @@ class TestRetryTaskEndpoints:
         assert task_log.related_message_id == message.id
         assert task_log.payload["message_ids"] == [message.id]
         assert task_log.payload["mailbox_ids"] == [message.mailbox_id]
+
+    def test_retry_single_extraction_marks_task_failed_when_scheduling_fails(
+        self,
+        client: TestClient,
+        db_session: Session,
+        setup_users: dict[str, User | Mailbox],
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        message = _create_mail_message(
+            db_session,
+            mailbox=setup_users["mailbox"],
+            subject="single schedule failure",
+        )
+        _create_failed_archive(db_session, mailbox=setup_users["mailbox"], message=message)
+        db_session.commit()
+
+        monkeypatch.setattr("app.core.scheduler.init_scheduler", lambda: None)
+
+        def raise_schedule(_job_id: str):
+            raise RuntimeError("scheduler offline")
+
+        monkeypatch.setattr("app.core.scheduler.add_extraction_retry_job", raise_schedule)
+
+        with pytest.raises(RuntimeError, match="scheduler offline"):
+            client.post(
+                f"/api/v1/mail-messages/{message.id}/retry-extraction",
+                headers=_auth_headers(client, "admin_mail_retry"),
+            )
+
+        failed_task = db_session.scalar(
+            select(TaskLog)
+            .where(TaskLog.related_message_id == message.id)
+            .order_by(TaskLog.executed_at.desc())
+            .limit(1)
+        )
+        assert failed_task is not None
+        assert failed_task.status == TaskStatus.FAILED.value
+        assert "任务调度失败" in failed_task.error_message
+        assert db_session.get(ActiveTaskLock, failed_task.id) is None
+
+        scheduled: list[str] = []
+        monkeypatch.setattr("app.core.scheduler.add_extraction_retry_job", lambda job_id: scheduled.append(job_id))
+
+        retry_response = client.post(
+            f"/api/v1/mail-messages/{message.id}/retry-extraction",
+            headers=_auth_headers(client, "admin_mail_retry"),
+        )
+
+        assert retry_response.status_code == 202
+        payload = retry_response.json()["data"]
+        assert payload["job_id"] != failed_task.id
+        assert scheduled == [payload["job_id"]]
 
     def test_retry_single_extraction_checks_mailbox_scope(
         self,
@@ -321,6 +395,27 @@ class TestRetryTaskEndpoints:
 
         assert response.status_code == 403
         assert response.json()["code"] == 40301
+
+    def test_get_task_log_detail_rejects_missing_authorization_header(
+        self,
+        client: TestClient,
+        db_session: Session,
+        setup_users: dict[str, User | Mailbox],
+    ):
+        task_log = TaskLog(
+            task_type=TaskType.AI_EXTRACTION.value,
+            task_key="missing-auth-task-key",
+            status=TaskStatus.PENDING.value,
+            related_mailbox_id=setup_users["mailbox"].id,
+            payload={"mailbox_ids": [setup_users["mailbox"].id], "message_ids": ["msg-auth"]},
+        )
+        db_session.add(task_log)
+        db_session.commit()
+
+        response = client.get(f"/api/v1/task-logs/{task_log.id}")
+
+        assert response.status_code == 401
+        assert response.json()["code"] == 40101
 
     def test_get_task_log_detail_obeys_mailbox_scope(
         self,
@@ -448,6 +543,7 @@ class TestExtractionRetryWorker:
         assert archive.status == ProcessingStatus.ARCHIVED.value
         assert archive.summary is not None
         assert task_log.status == TaskStatus.SUCCESS.value
+        assert db_session.get(ActiveTaskLock, task_log.id) is None
         assert task_log.result["succeeded_count"] == 1
         assert task_log.result["failed_count"] == 0
         assert task_log.result["details"][0]["status"] == ExtractionStatus.SUCCESS.value

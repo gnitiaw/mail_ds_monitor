@@ -14,11 +14,11 @@ def db_session() -> Generator[Session, None, None]:
 
 
 def get_current_user(
-    authorization: str = Header(...),
+    authorization: str | None = Header(None),
     db: Session = Depends(db_session),
 ) -> User:
     """获取当前登录用户。"""
-    if not authorization.startswith("Bearer "):
+    if not authorization or not authorization.startswith("Bearer "):
         raise UnauthorizedError("未登录")
 
     token = authorization[7:]

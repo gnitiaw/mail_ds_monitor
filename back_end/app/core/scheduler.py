@@ -106,6 +106,7 @@ def recover_stuck_runs() -> None:
     from app.models.analysis_run import AnalysisRun
     from app.models.enums import AnalysisRunStatus, TaskStatus, TaskType
     from app.models.task_log import TaskLog
+    from app.services.task_log_service import release_task_lock
 
     engine = create_engine(settings.sqlalchemy_database_uri)
     SessionLocal = sessionmaker(bind=engine)
@@ -140,6 +141,7 @@ def recover_stuck_runs() -> None:
                 task_log.status = TaskStatus.FAILED.value
                 task_log.finished_at = datetime.now(timezone.utc)
                 task_log.error_message = "Task lost due to server restart"
+                release_task_lock(db, task_log_id=task_log.id)
 
         db.commit()
         logger.info(
