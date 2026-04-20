@@ -576,7 +576,8 @@ code, pre, .font-mono {
 }
 
 .login-card {
-  width: 420px;
+  max-width: 420px;
+  width: 100%;
   padding: 48px 40px;
   background: var(--clay-white);
   border-radius: var(--radius-section);
