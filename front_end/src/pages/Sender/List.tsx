@@ -138,8 +138,18 @@ const SenderList: React.FC = () => {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <Card>
+    <div className="page-container">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">发件人管理</h1>
+          <p className="page-desc">管理发件人画像和候选发件人</p>
+        </div>
+        {activeTab === 'profiles' && !isOperator && (
+          <Button type="primary" onClick={() => openModal()}>新建发件人</Button>
+        )}
+      </div>
+
+      <Card className="filter-card">
         <Form form={form} layout="inline" onFinish={handleSearch}>
           <Form.Item name="keyword" label="关键字">
             <Input placeholder="邮箱/域名/客户名称" allowClear style={{ width: 200 }} />
@@ -168,10 +178,7 @@ const SenderList: React.FC = () => {
         </Form>
       </Card>
 
-      <Card
-        title="发件人管理"
-        extra={activeTab === 'profiles' && !isOperator && <Button type="primary" onClick={() => openModal()}>新建发件人</Button>}
-      >
+      <Card className="main-card">
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}

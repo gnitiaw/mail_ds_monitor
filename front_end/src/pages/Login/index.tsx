@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Card, Typography } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { Form, Input, Button } from 'antd';
+import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../../api/auth';
 import { appMessage } from '../../utils/appMessage';
-
-const { Title } = Typography;
 
 const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -27,19 +25,14 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: '100vh',
-      background: 'var(--body-bg, #F5F9FF)'
-    }}>
-      <Card 
-        style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-        styles={{ body: { padding: '32px' } }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Title level={3}>邮件监控系统登录</Title>
+    <div className="login-page">
+      <div className="login-card">
+        <div className="login-header">
+          <div className="login-icon">
+            <MailOutlined style={{ fontSize: 24, color: '#ffffff' }} />
+          </div>
+          <h1 className="login-title">Mail Monitor</h1>
+          <p className="login-subtitle">邮件监控系统登录</p>
         </div>
         <Form
           name="login"
@@ -50,21 +43,32 @@ const Login: React.FC = () => {
             name="username"
             rules={[{ required: true, message: '请输入用户名' }]}
           >
-            <Input prefix={<UserOutlined />} placeholder="用户名" />
+            <Input
+              prefix={<UserOutlined style={{ color: '#9f9b93' }} />}
+              placeholder="用户名"
+            />
           </Form.Item>
           <Form.Item
             name="password"
             rules={[{ required: true, message: '请输入密码' }]}
           >
-            <Input.Password prefix={<LockOutlined />} placeholder="密码" />
+            <Input.Password
+              prefix={<LockOutlined style={{ color: '#9f9b93' }} />}
+              placeholder="密码"
+            />
           </Form.Item>
-          <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>
-            <Button type="primary" htmlType="submit" block loading={loading}>
+          <Form.Item style={{ marginBottom: 0, marginTop: 32 }}>
+            <Button
+              htmlType="submit"
+              block
+              loading={loading}
+              className="login-submit-btn"
+            >
               登录
             </Button>
           </Form.Item>
         </Form>
-      </Card>
+      </div>
     </div>
   );
 };

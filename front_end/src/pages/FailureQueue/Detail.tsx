@@ -85,8 +85,8 @@ const FailureQueueDetailView: React.FC = () => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="page-container">
+      <div className="back-nav-bar">
         <Space align="center">
           <Button onClick={() => navigate(-1)}>返回</Button>
           <Title level={4} style={{ margin: 0 }}>失败邮件详情</Title>
@@ -94,7 +94,7 @@ const FailureQueueDetailView: React.FC = () => {
             {statusTextMap[data.status] || data.status}
           </Tag>
         </Space>
-        
+
         <Space>
           {data.status === 'new' && (
             <Button type="primary" onClick={() => handleStatusChange('acknowledged')} loading={actionLoading}>
@@ -128,13 +128,13 @@ const FailureQueueDetailView: React.FC = () => {
         <div style={{ display: 'flex', gap: '24px' }}>
           <div style={{ flex: 1 }}>
             <Text strong>匹配到的字段 (Matched Fields)</Text>
-            <pre style={{ background: '#f5f5f5', padding: '16px', borderRadius: '4px', marginTop: '8px' }}>
+            <pre style={{ background: 'var(--oat-light)', padding: '16px', borderRadius: 'var(--radius-base)', marginTop: '8px' }}>
               {JSON.stringify(data.matched_snapshot?.matched_fields || {}, null, 2)}
             </pre>
           </div>
           <div style={{ flex: 1 }}>
             <Text strong>提取出的信息 (Extracted Fields)</Text>
-            <pre style={{ background: '#f5f5f5', padding: '16px', borderRadius: '4px', marginTop: '8px' }}>
+            <pre style={{ background: 'var(--oat-light)', padding: '16px', borderRadius: 'var(--radius-base)', marginTop: '8px' }}>
               {JSON.stringify(data.matched_snapshot?.extracted_fields || {}, null, 2)}
             </pre>
           </div>
@@ -145,10 +145,10 @@ const FailureQueueDetailView: React.FC = () => {
         {data.body_html ? (
           <div 
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(data.body_html) }} 
-            style={{ border: '1px solid #f0f0f0', padding: '16px', borderRadius: '4px', minHeight: '200px' }}
+            style={{ border: '1px solid var(--oat-border)', padding: '16px', borderRadius: 'var(--radius-base)', minHeight: '200px' }}
           />
         ) : (
-          <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word', background: '#f5f5f5', padding: '16px', borderRadius: '4px' }}>
+          <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word', background: 'var(--oat-light)', padding: '16px', borderRadius: 'var(--radius-base)' }}>
             {data.body_text || '无正文内容'}
           </pre>
         )}

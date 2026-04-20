@@ -1,51 +1,128 @@
+/* ============================================
+   Mail Monitor — Clay Design System
+   Inspired by Clay's warm, playful craft aesthetic
+   ============================================ */
+
 :root {
-  /* 主色 */
-  --primary-color: #1677FF;
-  --primary-hover: #4096FF;
-  --primary-active: #0958D9;
+  /* --- Clay Core Colors --- */
+  --clay-black: #000000;
+  --clay-white: #ffffff;
+  --warm-cream: #faf9f7;
+  --oat-border: #dad4c8;
+  --oat-light: #eee9df;
+  --cool-border: #e6e8ec;
 
-  /* 辅助色 */
-  --secondary-blue: #69B1FF;
-  --light-blue-surface: #F0F7FF;
-  --accent-blue-border: #B7D7FF;
+  /* --- Clay Swatch Palette --- */
+  /* Matcha (Green) */
+  --matcha-300: #84e7a5;
+  --matcha-600: #078a52;
+  --matcha-800: #02492a;
 
-  /* 中性色 */
-  --page-bg: #F5F9FF;
-  --container-bg: #FFFFFF;
-  --header-bg: #FFFFFF;
-  --sidebar-bg: #F7FBFF;
-  --border-color: #DCE9F7;
-  --divider-color: #EAF2FB;
-  --text-primary: #16324F;
-  --text-secondary: #5B7594;
-  --text-tertiary: #8AA0BA;
+  /* Slushie (Cyan) */
+  --slushie-500: #3bd3fd;
+  --slushie-800: #0089ad;
 
-  /* 状态色 */
-  --color-success: #31A46C;
-  --color-warning: #F5A623;
-  --color-error: #E14D4D;
-  --color-info: #1677FF;
+  /* Lemon (Gold) */
+  --lemon-400: #f8cc65;
+  --lemon-500: #fbbd41;
+  --lemon-700: #d08a11;
+  --lemon-800: #9d6a09;
 
-  /* 圆角与阴影 */
-  --border-radius-base: 12px;
-  --border-radius-large: 16px;
-  --border-radius-small: 10px;
-  --shadow-card: 0 10px 30px rgba(22, 50, 79, 0.06);
-  --shadow-hover: 0 14px 36px rgba(22, 50, 79, 0.10);
+  /* Ube (Purple) */
+  --ube-300: #c1b0ff;
+  --ube-800: #43089f;
+  --ube-900: #32037d;
+
+  /* Pomegranate (Pink/Red) */
+  --pomegranate-400: #fc7981;
+
+  /* Blueberry (Navy) */
+  --blueberry-800: #01418d;
+
+  /* --- Neutral Scale (Warm) --- */
+  --warm-silver: #9f9b93;
+  --warm-charcoal: #55534e;
+  --dark-charcoal: #333333;
+
+  /* --- Semantic Aliases (for component use) --- */
+  --color-primary: var(--matcha-600);
+  --color-primary-hover: var(--matcha-800);
+  --color-success: var(--matcha-600);
+  --color-warning: var(--lemon-500);
+  --color-error: var(--pomegranate-400);
+  --color-info: var(--slushie-500);
+
+  /* --- Surface --- */
+  --page-bg: var(--warm-cream);
+  --container-bg: var(--clay-white);
+  --sidebar-bg: var(--warm-cream);
+  --header-bg: var(--clay-white);
+
+  /* --- Text --- */
+  --text-primary: var(--clay-black);
+  --text-secondary: var(--warm-silver);
+  --text-tertiary: var(--warm-charcoal);
+
+  /* --- Border --- */
+  --border-color: var(--oat-border);
+  --border-light: var(--oat-light);
+  --divider-color: var(--oat-light);
+
+  /* --- Border Radius (Clay Scale) --- */
+  --radius-sharp: 4px;
+  --radius-sm: 8px;
+  --radius-badge: 11px;
+  --radius-base: 12px;
+  --radius-lg: 24px;
+  --radius-section: 40px;
+  --radius-pill: 1584px;
+
+  /* --- Clay Shadow System --- */
+  --shadow-clay: rgba(0,0,0,0.1) 0px 1px 1px, rgba(0,0,0,0.04) 0px -1px 1px inset, rgba(0,0,0,0.05) 0px -0.5px 1px;
+  --shadow-hover-hard: rgb(0,0,0) -7px 7px;
+  --shadow-card: var(--shadow-clay);
+
+  /* --- Typography --- */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Space Mono', 'Consolas', monospace;
+
+  /* --- Spacing (8px base) --- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
 }
+
+/* ============================================
+   Global Styles
+   ============================================ */
 
 body {
   margin: 0;
-  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  font-family: var(--font-primary);
+  font-feature-settings: "ss03", "ss10", "ss11", "ss12";
   background-color: var(--page-bg);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+code, pre, .font-mono {
+  font-family: var(--font-mono);
 }
+
+* {
+  box-sizing: border-box;
+}
+
+/* ============================================
+   Page Layout Classes
+   ============================================ */
 
 .page-container {
   max-width: 1200px;
@@ -56,31 +133,545 @@ code {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
 .page-title {
   margin: 0 !important;
-  font-size: 24px !important;
+  font-size: 32px !important;
   font-weight: 600 !important;
+  letter-spacing: -0.64px;
+  font-feature-settings: "ss01", "ss03", "ss10", "ss11", "ss12";
   color: var(--text-primary) !important;
 }
 
 .page-desc {
-  font-size: 13px;
+  font-size: 16px;
   color: var(--text-secondary);
-  margin-top: 4px;
+  margin-top: var(--space-1);
+  line-height: 1.5;
+}
+
+/* ============================================
+   Card Variants (Clay Style)
+   ============================================ */
+
+.clay-card {
+  background: var(--container-bg);
+  border: 1px solid var(--oat-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-clay);
+  transition: box-shadow 0.2s ease;
+}
+
+.clay-card:hover {
+  box-shadow: var(--shadow-clay), 0 4px 12px rgba(0,0,0,0.04);
+}
+
+.clay-card-dashed {
+  background: var(--container-bg);
+  border: 1px dashed var(--oat-border);
+  border-radius: var(--radius-lg);
 }
 
 .filter-card {
-  margin-bottom: 16px;
-  border-radius: var(--border-radius-base) !important;
-  box-shadow: var(--shadow-card) !important;
-  border: 1px solid var(--border-color) !important;
+  margin-bottom: var(--space-6);
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-clay) !important;
+  border: 1px solid var(--oat-border) !important;
 }
 
 .main-card {
-  border-radius: var(--border-radius-base) !important;
-  box-shadow: var(--shadow-card) !important;
-  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-clay) !important;
+  border: 1px solid var(--oat-border) !important;
+}
+
+/* ============================================
+   Clay Buttons
+   ============================================ */
+
+.clay-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 20px;
+  font-family: var(--font-primary);
+  font-size: 16px;
+  font-weight: 500;
+  font-feature-settings: "ss03", "ss10", "ss11", "ss12";
+  letter-spacing: -0.16px;
+  color: var(--clay-black);
+  background: transparent;
+  border: 1px solid var(--oat-border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: var(--shadow-clay);
+}
+
+.clay-btn:hover {
+  background: var(--matcha-600);
+  color: var(--clay-white);
+  border-color: var(--matcha-600);
+  transform: rotateZ(-8deg) translateY(-80%);
+  box-shadow: var(--shadow-hover-hard);
+}
+
+.clay-btn-primary {
+  background: var(--clay-black);
+  color: var(--clay-white);
+  border-color: var(--clay-black);
+}
+
+.clay-btn-primary:hover {
+  background: var(--warm-charcoal);
+  border-color: var(--warm-charcoal);
+  transform: rotateZ(-8deg) translateY(-80%);
+  box-shadow: var(--shadow-hover-hard);
+  color: var(--clay-white);
+}
+
+.clay-btn-matcha {
+  background: var(--matcha-600);
+  color: var(--clay-white);
+  border-color: var(--matcha-600);
+}
+
+.clay-btn-matcha:hover {
+  background: var(--matcha-800);
+  border-color: var(--matcha-800);
+  transform: rotateZ(-8deg) translateY(-80%);
+  box-shadow: var(--shadow-hover-hard);
+  color: var(--clay-white);
+}
+
+.clay-btn-lemon {
+  background: var(--lemon-500);
+  color: var(--clay-black);
+  border-color: var(--lemon-500);
+}
+
+.clay-btn-lemon:hover {
+  background: var(--lemon-700);
+  color: var(--clay-white);
+  border-color: var(--lemon-700);
+  transform: rotateZ(-8deg) translateY(-80%);
+  box-shadow: var(--shadow-hover-hard);
+}
+
+/* ============================================
+   Clay Status Tags
+   ============================================ */
+
+.clay-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--radius-pill);
+  letter-spacing: -0.16px;
+}
+
+.clay-tag-success {
+  background: var(--matcha-300);
+  color: var(--matcha-800);
+}
+
+.clay-tag-error {
+  background: var(--pomegranate-400);
+  color: var(--clay-white);
+}
+
+.clay-tag-warning {
+  background: var(--lemon-400);
+  color: var(--lemon-800);
+}
+
+.clay-tag-info {
+  background: var(--slushie-500);
+  color: var(--slushie-800);
+}
+
+.clay-tag-default {
+  background: var(--oat-light);
+  color: var(--warm-charcoal);
+}
+
+/* ============================================
+   Clay Uppercase Label
+   ============================================ */
+
+.clay-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.08px;
+  font-feature-settings: "ss03", "ss10", "ss11", "ss12";
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   Stat Cards (Swatch Colored)
+   ============================================ */
+
+.stat-card {
+  padding: var(--space-6);
+  border-radius: var(--radius-section);
+  color: var(--clay-white);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card-matcha {
+  background: var(--matcha-800);
+}
+
+.stat-card-pomegranate {
+  background: var(--pomegranate-400);
+}
+
+.stat-card-slushie {
+  background: var(--slushie-800);
+}
+
+.stat-card-lemon {
+  background: var(--lemon-700);
+}
+
+.stat-card-ube {
+  background: var(--ube-800);
+}
+
+.stat-card .stat-value {
+  font-size: 40px;
+  font-weight: 600;
+  font-feature-settings: "ss01", "ss03", "ss10", "ss11", "ss12";
+  letter-spacing: -1.6px;
+  line-height: 1;
+  margin-bottom: var(--space-2);
+}
+
+.stat-card .stat-label {
+  font-size: 14px;
+  font-weight: 400;
+  opacity: 0.85;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================
+   Ant Design Overrides (Clay Style)
+   ============================================ */
+
+/* Card */
+.ant-card {
+  border-color: var(--oat-border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-clay) !important;
+}
+
+.ant-card-bordered {
+  border-color: var(--oat-border) !important;
+}
+
+/* Table */
+.ant-table {
+  border-radius: var(--radius-lg) !important;
+}
+
+.ant-table-thead > tr > th {
+  background: var(--oat-light) !important;
+  color: var(--text-primary) !important;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--oat-border) !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: var(--oat-light) !important;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--oat-light) !important;
+}
+
+/* Tag */
+.ant-tag {
+  border-radius: var(--radius-pill) !important;
+  border: none !important;
+  font-weight: 500;
+  padding: 2px 12px !important;
+}
+
+/* Button */
+.ant-btn {
+  border-radius: var(--radius-pill) !important;
+  font-weight: 500;
+  letter-spacing: -0.16px;
+  transition: all 0.15s ease;
+}
+
+.ant-btn-primary {
+  box-shadow: var(--shadow-clay) !important;
+}
+
+.ant-btn-primary:hover {
+  transform: rotateZ(-2deg) translateY(-1px);
+  box-shadow: var(--shadow-hover-hard) !important;
+}
+
+/* Input */
+.ant-input,
+.ant-select-selector,
+.ant-picker {
+  border-color: var(--oat-border) !important;
+  border-radius: var(--radius-sharp) !important;
+}
+
+.ant-input:focus,
+.ant-input-focused,
+.ant-select-focused .ant-select-selector,
+.ant-picker-focused {
+  border-color: var(--matcha-600) !important;
+  box-shadow: 0 0 0 2px rgba(7, 138, 82, 0.12) !important;
+}
+
+/* Modal */
+.ant-modal-content {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-clay), 0 20px 60px rgba(0,0,0,0.1) !important;
+}
+
+.ant-modal-header {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+}
+
+/* Tabs */
+.ant-tabs-tab {
+  font-weight: 500;
+  letter-spacing: -0.16px;
+}
+
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--matcha-600) !important;
+}
+
+.ant-tabs-ink-bar {
+  background: var(--matcha-600) !important;
+}
+
+/* Menu */
+.ant-menu-item-selected {
+  background: var(--oat-light) !important;
+  color: var(--matcha-600) !important;
+  font-weight: 600;
+}
+
+/* Pagination */
+.ant-pagination-item-active {
+  border-color: var(--matcha-600) !important;
+}
+
+.ant-pagination-item-active a {
+  color: var(--matcha-600) !important;
+}
+
+/* Dropdown */
+.ant-dropdown-menu {
+  border-radius: var(--radius-base) !important;
+  box-shadow: var(--shadow-clay), 0 8px 24px rgba(0,0,0,0.08) !important;
+  border: 1px solid var(--oat-border) !important;
+}
+
+/* Avatar */
+.ant-avatar {
+  background: var(--matcha-600) !important;
+}
+
+/* Form */
+.ant-form-item-label > label {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Badge */
+.ant-badge {
+  font-size: 12px;
+}
+
+/* ============================================
+   Scrollbar (Clay Style)
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--warm-cream);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--oat-border);
+  border-radius: var(--radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--warm-silver);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes clayFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.clay-fade-in {
+  animation: clayFadeIn 0.3s ease-out;
+}
+
+/* ============================================
+   Sidebar Logo
+   ============================================ */
+
+.sidebar-logo {
+  height: 56px;
+  margin: 16px 16px 24px;
+  background: linear-gradient(135deg, #078a52 0%, #02492a 100%);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 16px;
+  font-family: var(--font-primary);
+  letter-spacing: -0.32px;
+  box-shadow: var(--shadow-clay);
+}
+
+/* ============================================
+   Login Page
+   ============================================ */
+
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: var(--warm-cream);
+}
+
+.login-card {
+  width: 420px;
+  padding: 48px 40px;
+  background: var(--clay-white);
+  border-radius: var(--radius-section);
+  border: 1px solid var(--oat-border);
+  box-shadow: var(--shadow-clay);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.login-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #078a52 0%, #02492a 100%);
+  border-radius: 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-clay);
+}
+
+.login-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.56px;
+  color: var(--text-primary);
+}
+
+.login-subtitle {
+  margin: 8px 0 0;
+  font-size: 15px;
+  color: var(--text-secondary);
+  letter-spacing: -0.16px;
+}
+
+.login-submit-btn {
+  height: 48px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.16px;
+  background: var(--matcha-600);
+  border-color: var(--matcha-600);
+  box-shadow: var(--shadow-clay);
+  transition: all 0.15s ease;
+}
+
+.login-submit-btn:hover {
+  background: var(--matcha-800) !important;
+  border-color: var(--matcha-800) !important;
+}
+
+/* ============================================
+   Back Navigation Bar
+   ============================================ */
+
+.back-nav-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-6);
+}
+
+/* ============================================
+   Stat Cards Row
+   ============================================ */
+
+.stat-card-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+/* ============================================
+   Responsive (Tablet)
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .stat-card-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .stat-card-row {
+    grid-template-columns: 1fr;
+  }
+
+  .login-card {
+    width: 90vw;
+    padding: 32px 24px;
+  }
 }

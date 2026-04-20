@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { App as AntdApp, ConfigProvider } from 'antd';
+import { App as AntdApp, ConfigProvider, Empty } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import MainLayout from './components/Layout';
 import AppMessageBridge from './components/AppMessageBridge';
@@ -20,43 +20,76 @@ import SenderList from './pages/Sender/List';
 
 const App: React.FC = () => {
   return (
-    <ConfigProvider 
+    <ConfigProvider
       locale={zhCN}
+      renderEmpty={() => <Empty description="暂无数据" />}
       theme={{
         token: {
-          colorPrimary: '#1677FF',
-          colorSuccess: '#31A46C',
-          colorWarning: '#F5A623',
-          colorError: '#E14D4D',
-          colorInfo: '#1677FF',
-          colorTextBase: '#16324F',
-          colorTextSecondary: '#5B7594',
-          colorBgBase: '#FFFFFF',
-          borderRadius: 10,
-          fontFamily: '"PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif',
+          colorPrimary: '#078a52',
+          colorSuccess: '#078a52',
+          colorWarning: '#fbbd41',
+          colorError: '#fc7981',
+          colorInfo: '#3bd3fd',
+          colorTextBase: '#000000',
+          colorTextSecondary: '#9f9b93',
+          colorBgBase: '#ffffff',
+          borderRadius: 12,
+          fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          colorBorder: '#dad4c8',
+          colorBorderSecondary: '#eee9df',
+          colorBgLayout: '#faf9f7',
+          colorBgContainer: '#ffffff',
         },
         components: {
           Card: {
-            borderRadiusLG: 16,
-            boxShadowTertiary: '0 10px 30px rgba(22, 50, 79, 0.06)',
-            colorBorderSecondary: '#DCE9F7',
+            borderRadiusLG: 24,
+            boxShadowTertiary: 'rgba(0,0,0,0.1) 0px 1px 1px, rgba(0,0,0,0.04) 0px -1px 1px inset, rgba(0,0,0,0.05) 0px -0.5px 1px',
+            colorBorderSecondary: '#dad4c8',
           },
           Table: {
-            headerBg: '#F0F7FF',
-            headerColor: '#16324F',
-            rowHoverBg: '#F0F7FF',
+            headerBg: '#eee9df',
+            headerColor: '#000000',
+            rowHoverBg: '#faf9f7',
+            colorBorderSecondary: '#eee9df',
           },
           Menu: {
             itemBg: 'transparent',
-            itemColor: '#5B7594',
-            itemSelectedBg: '#F0F7FF',
-            itemSelectedColor: '#1677FF',
+            itemColor: '#55534e',
+            itemSelectedBg: '#eee9df',
+            itemSelectedColor: '#078a52',
+            itemHoverColor: '#078a52',
           },
           Layout: {
-            siderBg: '#F7FBFF',
-            headerBg: '#FFFFFF',
-            bodyBg: '#F5F9FF',
-          }
+            siderBg: '#faf9f7',
+            headerBg: '#ffffff',
+            bodyBg: '#faf9f7',
+          },
+          Button: {
+            borderRadius: 1584,
+            fontWeight: 500,
+          },
+          Tag: {
+            borderRadiusSM: 1584,
+          },
+          Modal: {
+            borderRadiusLG: 24,
+          },
+          Input: {
+            borderRadius: 4,
+            colorBorder: '#dad4c8',
+            activeBorderColor: '#078a52',
+            hoverBorderColor: '#9f9b93',
+          },
+          Select: {
+            colorBorder: '#dad4c8',
+            colorBorderSecondary: '#dad4c8',
+            activeBorderColor: '#078a52',
+            optionSelectedBg: '#eee9df',
+          },
+          Tabs: {
+            inkBarColor: '#078a52',
+            itemSelectedColor: '#078a52',
+          },
         }
       }}
     >
