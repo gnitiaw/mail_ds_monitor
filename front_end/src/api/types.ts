@@ -18,6 +18,11 @@ export type SummaryScheduleType = 'daily';
 export type SummarySendStatus = 'pending' | 'success' | 'failed';
 export type ExtractionStatus = 'pending' | 'success' | 'failed';
 export type TaskStatus = 'pending' | 'running' | 'success' | 'failed';
+export type ServiceReportType = 'monthly' | 'quarterly' | 'annual';
+export type ServiceReportCompletenessStatus = 'ready' | 'partial' | 'blocked';
+export type ServiceReportSectionStatus = 'ready' | 'partial' | 'blocked';
+export type ServiceReportSourceRunStatus = 'pending' | 'running' | 'success' | 'partial_success' | 'failed';
+export type ServiceReportRunStatus = 'pending' | 'running' | 'success' | 'failed' | 'canceled';
 
 export interface Mailbox {
   id: string;
@@ -223,4 +228,120 @@ export interface TaskLogDetail {
   started_at?: string | null;
   finished_at?: string | null;
   executed_at: string;
+}
+
+export interface UserOption {
+  id: string;
+  display_name: string;
+  role: string;
+}
+
+export interface ServiceReportSourceBinding {
+  source_type: 'inspection' | 'vulnerability' | 'worklog' | 'zentao_bug';
+  ingest_mode: 'file_import' | 'api_pull' | 'manual_entry';
+}
+
+export interface ServiceReportConfig {
+  config_id: string;
+  name: string;
+  project_name: string;
+  report_type: ServiceReportType;
+  period_rule: 'natural_month' | 'natural_quarter' | 'natural_year' | 'custom';
+  template_key: 'ops_service_monthly_v1' | 'ops_service_quarterly_v1' | 'ops_service_annual_v1';
+  project_owner_user_id: string;
+  template_owner_user_id: string;
+  metric_owner_user_id: string;
+  enabled: boolean;
+  recipient_emails: string[];
+  source_bindings: ServiceReportSourceBinding[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ServiceReportSourceResult {
+  source_type: 'inspection' | 'vulnerability' | 'worklog' | 'zentao_bug';
+  status: ServiceReportSourceRunStatus;
+  record_count: number;
+  valid_row_count: number;
+  invalid_row_count: number;
+  error_message?: string | null;
+}
+
+export interface ServiceReportSourceRun {
+  source_run_id: string;
+  config_id: string;
+  status: ServiceReportSourceRunStatus;
+  window_start: string;
+  window_end: string;
+  included_sources: string[];
+  source_results: ServiceReportSourceResult[];
+  created_at: string;
+}
+
+export interface ServiceReportRunSection {
+  key: string;
+  title: string;
+  data_status: ServiceReportSectionStatus;
+  blocking_reason?: string | null;
+  content_markdown: string;
+}
+
+export interface ServiceReportExportArtifact {
+  format: 'markdown' | 'html';
+  file_name: string;
+  download_url: string;
+  generated_at: string;
+}
+
+export interface ServiceReportRunItem {
+  run_id: string;
+  config_id: string;
+  config_name: string;
+  project_name: string;
+  report_type: ServiceReportType;
+  status: ServiceReportRunStatus;
+  completeness_status: ServiceReportCompletenessStatus;
+  window_start: string;
+  window_end: string;
+  source_run_id: string;
+  export_formats: Array<'markdown' | 'html'>;
+  created_at: string;
+  finished_at?: string | null;
+}
+
+export interface ServiceReportRunDetail {
+  run_id: string;
+  config_id: string;
+  config_snapshot: {
+    name: string;
+    project_name: string;
+    report_type: ServiceReportType;
+    period_rule: string;
+    template_key: string;
+    project_owner_user_id: string;
+    template_owner_user_id: string;
+    metric_owner_user_id: string;
+    recipient_emails: string[];
+    source_bindings: ServiceReportSourceBinding[];
+  };
+  source_run_id: string;
+  status: ServiceReportRunStatus;
+  completeness_status: ServiceReportCompletenessStatus;
+  window_start: string;
+  window_end: string;
+  source_snapshot_summary: {
+    overview?: Record<string, number>;
+    source_results?: ServiceReportSourceResult[];
+    evidence_refs?: Array<Record<string, unknown>>;
+  };
+  report_payload: {
+    summary_markdown: string;
+    sections: ServiceReportRunSection[];
+  };
+  manual_note?: string | null;
+  export_artifacts: ServiceReportExportArtifact[];
+  evidence_refs: Array<Record<string, unknown>>;
+  error_message?: string | null;
+  created_at: string;
+  finished_at?: string | null;
 }

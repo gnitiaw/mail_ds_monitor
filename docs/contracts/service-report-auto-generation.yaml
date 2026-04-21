@@ -1,0 +1,559 @@
+feature: 巡检与运维服务报告自动生成
+
+enum_definitions:
+  report_type:
+    - monthly
+    - quarterly
+    - annual
+  period_rule:
+    - natural_month
+    - natural_quarter
+    - natural_year
+    - custom
+  source_type:
+    - inspection
+    - vulnerability
+    - worklog
+    - zentao_bug
+  source_ingest_mode:
+    - api_pull
+    - file_import
+    - manual_entry
+  source_run_status:
+    - pending
+    - running
+    - success
+    - partial_success
+    - failed
+  report_run_status:
+    - pending
+    - running
+    - success
+    - failed
+    - canceled
+  completeness_status:
+    - ready
+    - partial
+    - blocked
+  section_data_status:
+    - ready
+    - partial
+    - blocked
+  export_format:
+    - markdown
+    - html
+  template_key:
+    - ops_service_monthly_v1
+    - ops_service_quarterly_v1
+    - ops_service_annual_v1
+
+common_rules:
+  base_path: /api/v1
+  response_wrapper:
+    code: integer
+    message: string
+    data: object
+  auth_scheme: Bearer Token
+  date_format: ISO8601
+  null_handling: 明确区分 null、空字符串、缺失字段
+  fact_generation_rule: 关键数字必须来自结构化快照，AI 仅做摘要润色与风险归纳
+  snapshot_rule: 每次 report_run 必须保存 config_snapshot、template_version 和 source_snapshot_summary
+  record_scope_rule: report_run 只保存报告生成所需的快照、统计结果、章节草稿和证据引用，不复制原系统全量监控记录
+  evidence_reference_rule: 如需追溯原系统数据，只保存 evidence_refs 引用信息，不返回原始全量明细
+  completeness_rule: 每次 report_run 必须计算 completeness_status；每个 section 必须计算 data_status
+  export_gate_rule: completeness_status=blocked 时禁止导出；partial 时必须明确标记为仅供内部复核
+  owner_rule: 每条 config 必须有 project_owner_user_id、template_owner_user_id、metric_owner_user_id
+  v1_single_project_rule: 首期只允许单项目试点，所有 enabled 配置必须属于同一个 project_name
+  compatibility: 新增独立服务报告模块，不修改现有 summary 契约
+
+apis:
+  - name: 获取服务报告配置列表
+    endpoint: /service-report-configs
+    method: GET
+    auth:
+      required: true
+      roles:
+        - admin
+        - operator
+    path_params: {}
+    query_params:
+      report_type:
+        type: enum(monthly|quarterly|annual) | null
+        required: false
+        meaning: 按报告类型筛选
+      enabled:
+        type: boolean | null
+        required: false
+        meaning: 按启用状态筛选
+      keyword:
+        type: string | null
+        required: false
+        meaning: 按项目名称或配置名称模糊搜索
+      page:
+        type: integer
+        required: false
+        default: 1
+      page_size:
+        type: integer
+        required: false
+        default: 20
+    request_body: null
+    response_body:
+      code: 0
+      message: success
+      data:
+        items:
+          - config_id: string
+            name: string
+            project_name: string
+            report_type: monthly | quarterly | annual
+            period_rule: natural_month | natural_quarter | natural_year | custom
+            template_key: ops_service_monthly_v1 | ops_service_quarterly_v1 | ops_service_annual_v1
+            project_owner_user_id: string
+            template_owner_user_id: string
+            metric_owner_user_id: string
+            enabled: true
+            recipient_emails:
+              - string
+            source_bindings:
+              - source_type: inspection | vulnerability | worklog | zentao_bug
+                ingest_mode: api_pull | file_import | manual_entry
+                binding_key: string
+            created_at: datetime
+            updated_at: datetime
+        page: 1
+        page_size: 20
+        total: 0
+    field_meanings:
+      binding_key: 数据源绑定标识，例如项目 ID、导入模板键或外部查询键
+      source_bindings: 当前配置绑定的四类数据源信息
+    idempotency: 查询接口，无副作用
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 50001
+        message: 系统异常
+    backward_compatibility: 新增接口，向后兼容
+
+  - name: 创建服务报告配置
+    endpoint: /service-report-configs
+    method: POST
+    auth:
+      required: true
+      roles:
+        - admin
+    path_params: {}
+    query_params: {}
+    request_body:
+      name: string
+      project_name: string
+      report_type: monthly | quarterly | annual
+      period_rule: natural_month | natural_quarter | natural_year | custom
+      template_key: ops_service_monthly_v1 | ops_service_quarterly_v1 | ops_service_annual_v1
+      project_owner_user_id: string
+      template_owner_user_id: string
+      metric_owner_user_id: string
+      enabled: boolean
+      recipient_emails:
+        - string
+      source_bindings:
+        - source_type: inspection | vulnerability | worklog | zentao_bug
+          ingest_mode: api_pull | file_import | manual_entry
+          binding_key: string
+          options: object | null
+    response_body:
+      code: 0
+      message: success
+      data:
+        config_id: string
+        name: string
+        project_name: string
+        report_type: monthly | quarterly | annual
+        period_rule: natural_month | natural_quarter | natural_year | custom
+        template_key: ops_service_monthly_v1 | ops_service_quarterly_v1 | ops_service_annual_v1
+        project_owner_user_id: string
+        template_owner_user_id: string
+        metric_owner_user_id: string
+        enabled: true
+        recipient_emails:
+          - string
+        source_bindings:
+          - source_type: inspection | vulnerability | worklog | zentao_bug
+            ingest_mode: api_pull | file_import | manual_entry
+            binding_key: string
+            options: object | null
+        created_at: datetime
+        updated_at: datetime
+    field_meanings:
+      options: 数据源扩展配置，例如文件模板、字段映射或外部筛选条件
+      recipient_emails: 后续发送或共享报告时的默认接收人列表
+    idempotency: 配置名称在系统内唯一，重复创建同名配置需返回冲突
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限
+      - code: 40901
+        message: 报告配置名称冲突
+      - code: 40902
+        message: V1 仅允许单项目试点，当前已有其他启用中的项目配置
+      - code: 50001
+        message: 系统异常
+    backward_compatibility: 新增接口，向后兼容
+
+  - name: 触发服务报告数据汇总
+    endpoint: /service-report-configs/{config_id}/source-runs
+    method: POST
+    auth:
+      required: true
+      roles:
+        - admin
+        - operator
+    path_params:
+      config_id:
+        type: string
+        required: true
+        meaning: 服务报告配置 ID
+    query_params: {}
+    request_body:
+      content_type: multipart/form-data
+      fields:
+        window_start:
+          type: datetime
+          required: true
+        window_end:
+          type: datetime
+          required: true
+        inspection_file:
+          type: file(.csv|.xlsx)
+          required: true
+        vulnerability_file:
+          type: file(.csv|.xlsx)
+          required: true
+        worklog_file:
+          type: file(.csv|.xlsx)
+          required: true
+        zentao_bug_file:
+          type: file(.csv|.xlsx)
+          required: true
+    response_body:
+      code: 0
+      message: success
+      data:
+        source_run_id: string
+        config_id: string
+        status: pending | running | success | partial_success | failed
+        window_start: datetime
+        window_end: datetime
+        included_sources:
+          - inspection | vulnerability | worklog | zentao_bug
+        source_results:
+          - source_type: inspection | vulnerability | worklog | zentao_bug
+            status: pending | running | success | partial_success | failed
+            record_count: integer
+            valid_row_count: integer
+            invalid_row_count: integer
+            error_message: string | null
+        created_at: datetime
+    field_meanings:
+      source_run_id: 一次数据汇总执行的唯一标识
+      source_results: 各数据源分项执行结果
+    idempotency: V1 当前实现不复用 source_run；重复上传会生成新的 source_run 记录
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限
+      - code: 40401
+        message: 报告配置不存在
+      - code: 40901
+        message: 当前已有相同窗口的数据汇总任务运行中
+      - code: 50001
+        message: 系统异常
+    backward_compatibility: 新增接口，向后兼容
+
+  - name: 触发服务报告生成
+    endpoint: /service-report-configs/{config_id}/report-runs
+    method: POST
+    auth:
+      required: true
+      roles:
+        - admin
+        - operator
+    path_params:
+      config_id:
+        type: string
+        required: true
+        meaning: 服务报告配置 ID
+    query_params: {}
+    request_body:
+      window_start: datetime
+      window_end: datetime
+      source_run_id: string | null
+      force_regenerate: boolean
+    response_body:
+      code: 0
+      message: success
+      data:
+        run_id: string
+        config_id: string
+        source_run_id: string | null
+        status: pending | running | success | failed | canceled
+        completeness_status: ready | partial | blocked
+        window_start: datetime
+        window_end: datetime
+        report_type: monthly | quarterly | annual
+        template_key: ops_service_monthly_v1 | ops_service_quarterly_v1 | ops_service_annual_v1
+        created_at: datetime
+    field_meanings:
+      source_run_id: 生成所绑定的数据汇总任务 ID，缺省时允许服务端自动复用最新成功快照
+      force_regenerate: 是否忽略已有成功 report_run 强制重新生成
+    idempotency: 同一 config_id + window_start + window_end + template_key 默认应复用已有成功或运行中的 report_run
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限
+      - code: 40401
+        message: 报告配置不存在
+      - code: 40901
+        message: 当前已有相同窗口的报告生成任务
+      - code: 42201
+        message: 缺少可用数据快照，无法生成报告
+      - code: 50001
+        message: 系统异常
+    backward_compatibility: 新增接口，向后兼容
+
+  - name: 获取服务报告运行列表
+    endpoint: /service-report-runs
+    method: GET
+    auth:
+      required: true
+      roles:
+        - admin
+        - operator
+    path_params: {}
+    query_params:
+      config_id:
+        type: string | null
+        required: false
+      report_type:
+        type: enum(monthly|quarterly|annual) | null
+        required: false
+      status:
+        type: enum(pending|running|success|failed|canceled) | null
+        required: false
+      page:
+        type: integer
+        required: false
+        default: 1
+      page_size:
+        type: integer
+        required: false
+        default: 20
+    request_body: null
+    response_body:
+      code: 0
+      message: success
+      data:
+        items:
+          - run_id: string
+            config_id: string
+            config_name: string
+            project_name: string
+            report_type: monthly | quarterly | annual
+            status: pending | running | success | failed | canceled
+            completeness_status: ready | partial | blocked
+            window_start: datetime
+            window_end: datetime
+            source_run_id: string | null
+            export_formats:
+              - markdown | html
+            created_at: datetime
+            finished_at: datetime | null
+        page: 1
+        page_size: 20
+        total: 0
+    field_meanings:
+      export_formats: 当前 run 已生成的导出格式列表
+    idempotency: 查询接口，无副作用
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 50001
+        message: 系统异常
+    backward_compatibility: 新增接口，向后兼容
+
+  - name: 获取服务报告运行详情
+    endpoint: /service-report-runs/{run_id}
+    method: GET
+    auth:
+      required: true
+      roles:
+        - admin
+        - operator
+    path_params:
+      run_id:
+        type: string
+        required: true
+        meaning: 报告生成任务 ID
+    query_params: {}
+    request_body: null
+    response_body:
+      code: 0
+      message: success
+      data:
+        run_id: string
+        config_id: string
+        config_snapshot:
+          name: string
+          project_name: string
+          report_type: monthly | quarterly | annual
+          period_rule: natural_month | natural_quarter | natural_year | custom
+          template_key: ops_service_monthly_v1 | ops_service_quarterly_v1 | ops_service_annual_v1
+          project_owner_user_id: string
+          template_owner_user_id: string
+          metric_owner_user_id: string
+          recipient_emails:
+            - string
+          source_bindings:
+            - source_type: inspection | vulnerability | worklog | zentao_bug
+              ingest_mode: api_pull | file_import | manual_entry
+              binding_key: string
+        source_run_id: string | null
+        status: pending | running | success | failed | canceled
+        completeness_status: ready | partial | blocked
+        window_start: datetime
+        window_end: datetime
+        source_snapshot_summary:
+          overview:
+            inspection_total: integer
+            vulnerability_fixed_total: integer
+            worklog_total: integer
+            zentao_bug_total: integer
+            high_risk_count: integer
+          source_results:
+            - source_type: inspection | vulnerability | worklog | zentao_bug
+              status: pending | running | success | partial_success | failed
+              record_count: integer
+              valid_row_count: integer
+              invalid_row_count: integer
+              error_message: string | null
+          evidence_refs:
+            - source_type: inspection | vulnerability | worklog | zentao_bug
+              ref_type: record | issue | work_item | attachment
+              ref_id: string
+              title: string | null
+              summary: string | null
+        report_payload:
+          summary_markdown: string
+          sections:
+            - key: string
+              title: string
+              data_status: ready | partial | blocked
+              blocking_reason: string | null
+              content_markdown: string
+        export_artifacts:
+          - format: markdown | html
+            file_name: string
+            download_url: string
+            generated_at: datetime
+        error_message: string | null
+        created_at: datetime
+        finished_at: datetime | null
+    field_meanings:
+      config_snapshot: 生成时固化的配置快照
+      source_snapshot_summary: 生成时固化的数据快照摘要，用于审计和追溯
+      completeness_status: 当前报告是否达到可外发标准
+      evidence_refs: 仅保存少量可追溯证据引用，不返回各来源系统的全量原始记录
+      sections: 按模板拆分后的报告章节
+      export_artifacts: 已生成的导出文件信息
+    idempotency: 查询接口，无副作用
+    error_codes:
+      - code: 40101
+        message: 未登录
+      - code: 40401
+        message: 报告生成记录不存在
+      - code: 50001
+        message: 系统异常
+    backward_compatibility: 新增接口，向后兼容
+
+  - name: 导出服务报告
+    endpoint: /service-report-runs/{run_id}/export
+    method: POST
+    auth:
+      required: true
+      roles:
+        - admin
+        - operator
+    path_params:
+      run_id:
+        type: string
+        required: true
+        meaning: 报告生成任务 ID
+    query_params: {}
+    request_body:
+      format: markdown | html
+      overwrite: boolean
+    response_body:
+      code: 0
+      message: success
+      data:
+        run_id: string
+        format: markdown | html
+        file_name: string
+        download_url: string
+        generated_at: datetime
+    field_meanings:
+      overwrite: 若对应格式文件已存在，是否覆盖重新生成
+      download_url: 导出文件的下载地址
+    idempotency: 同一 run_id + format 重复导出默认复用既有文件，除非 overwrite=true
+    error_codes:
+      - code: 40001
+        message: 参数错误
+      - code: 40101
+        message: 未登录
+      - code: 40301
+        message: 无权限
+      - code: 40401
+        message: 报告生成记录不存在
+      - code: 40901
+        message: 当前报告尚未生成成功，无法导出
+      - code: 40903
+        message: 当前报告 completeness_status=blocked，禁止导出
+      - code: 50001
+        message: 系统异常
+    backward_compatibility: 新增接口，向后兼容
+
+notes:
+  auth_requirement: 首期沿用现有 admin/operator 角色体系
+  idempotency_requirement: report_run 以配置 + source_run 为核心做复用；source_run 当前按每次上传单独落记录
+  error_code_extension: 如需细分外部数据源错误码，可在 50001 体系下新增子码，但需保持统一响应包装
+  v1_required_sources:
+    - inspection
+    - vulnerability
+    - worklog
+    - zentao_bug
+  v1_excluded_scope:
+    - 原系统全量邮件监控记录
+    - 原系统全量归档明细
+    - 原系统全量告警明细
+  v1_future_optional_scope:
+    - 邮件监控统计指标
+    - 邮件监控典型事件 evidence_refs
+  v1_required_owners:
+    - project_owner_user_id
+    - template_owner_user_id
+    - metric_owner_user_id
+  data_boundary_note: 现有邮件监控、失败捕获、归档明细仍由原模块负责；报告模块仅消费报告所需内容
+  backward_compatibility_note: 本功能为新增模块，不影响既有邮件汇总和失败捕获契约

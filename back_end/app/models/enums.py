@@ -146,3 +146,73 @@ class AnalysisRunStatus(StrEnum):
     SUCCESS = "success"
     FAILED = "failed"
     CANCELED = "canceled"
+
+
+class ReportType(StrEnum):
+    """服务报告类型。"""
+
+    MONTHLY = "monthly"
+    QUARTERLY = "quarterly"
+    ANNUAL = "annual"
+
+
+class PeriodRule(StrEnum):
+    """报告周期规则。"""
+
+    NATURAL_MONTH = "natural_month"
+    NATURAL_QUARTER = "natural_quarter"
+    NATURAL_YEAR = "natural_year"
+    CUSTOM = "custom"
+
+
+class SourceType(StrEnum):
+    """服务报告数据源类型。"""
+
+    INSPECTION = "inspection"
+    VULNERABILITY = "vulnerability"
+    WORKLOG = "worklog"
+    ZENTAO_BUG = "zentao_bug"
+
+
+class SourceIngestMode(StrEnum):
+    """数据源接入模式。"""
+
+    API_PULL = "api_pull"
+    FILE_IMPORT = "file_import"
+    MANUAL_ENTRY = "manual_entry"
+
+
+class SourceRunStatus(StrEnum):
+    """数据汇总执行状态。"""
+
+    PENDING = "pending"
+    RUNNING = "running"
+    SUCCESS = "success"
+    PARTIAL_SUCCESS = "partial_success"
+    FAILED = "failed"
+
+
+class ReportRunStatus(StrEnum):
+    """报告生成执行状态。"""
+
+    PENDING = "pending"
+    RUNNING = "running"
+    SUCCESS = "success"
+    FAILED = "failed"
+    CANCELED = "canceled"
+
+
+class CompletenessStatus(StrEnum):
+    """报告可交付状态。"""
+
+    READY = "ready"
+    PARTIAL = "partial"
+    BLOCKED = "blocked"
+
+
+class SectionDataStatus(StrEnum):
+    """章节数据状态。"""
+
+    READY = "ready"
+    PARTIAL = "partial"
+    BLOCKED = "blocked"

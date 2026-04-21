@@ -1,7 +1,7 @@
 import React from 'react';
 import { Layout as AntLayout, Menu, Dropdown, Space, Avatar } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { MailOutlined, InboxOutlined, ProfileOutlined, FileTextOutlined, WarningOutlined, UserOutlined, TeamOutlined } from '@ant-design/icons';
+import { MailOutlined, InboxOutlined, ProfileOutlined, FileTextOutlined, WarningOutlined, UserOutlined, TeamOutlined, FileDoneOutlined, SnippetsOutlined } from '@ant-design/icons';
 
 const { Header, Content, Sider } = AntLayout;
 
@@ -80,6 +80,16 @@ const MainLayout: React.FC = () => {
         },
       ],
     },
+    {
+      key: '/service-report-configs',
+      icon: <FileDoneOutlined />,
+      label: '服务报告配置',
+    },
+    {
+      key: '/service-report-runs',
+      icon: <SnippetsOutlined />,
+      label: '服务报告记录',
+    },
   ];
 
   const getSelectedKey = (pathname: string) => {
@@ -89,6 +99,8 @@ const MainLayout: React.FC = () => {
     if (pathname.startsWith('/senders')) return '/senders';
     if (pathname.startsWith('/summary-configs')) return '/summary-configs';
     if (pathname.startsWith('/summary-sends')) return '/summary-sends';
+    if (pathname.startsWith('/service-report-configs')) return '/service-report-configs';
+    if (pathname.startsWith('/service-report-runs')) return '/service-report-runs';
     return pathname;
   };
 

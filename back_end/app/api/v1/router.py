@@ -10,18 +10,23 @@ from app.api.v1.routes import (
     mail_messages,
     mailboxes,
     sender_profiles,
+    service_reports,
     summary,
     system,
     task_logs,
+    users,
 )
 
 router = APIRouter()
 router.include_router(system.router, tags=["system"])
 router.include_router(auth.router, tags=["auth"])
+router.include_router(users.router, tags=["users"])
 router.include_router(mailboxes.router, tags=["mailboxes"])
 router.include_router(mail_messages.router, tags=["mail-messages"])
 router.include_router(task_logs.router, tags=["task-logs"])
 router.include_router(archives.router, tags=["archives"])
+router.include_router(service_reports.configs_router, tags=["service-report-configs"])
+router.include_router(service_reports.runs_router, tags=["service-report-runs"])
 router.include_router(summary.router, tags=["summary-configs"])
 router.include_router(summary.sends_router, tags=["summary-sends"])
 router.include_router(analysis_runs.summary_configs_router, prefix="/summary-configs", tags=["summary-configs"])

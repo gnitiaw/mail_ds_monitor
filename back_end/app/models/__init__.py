@@ -6,6 +6,11 @@ from app.models.failure_queue import FailureMailQueue
 from app.models.mail_message import MailMessage
 from app.models.mailbox import Mailbox
 from app.models.sender_profile import SenderProfile
+from app.models.service_report import (
+    ServiceReportConfig,
+    ServiceReportRun,
+    ServiceReportSourceRun,
+)
 from app.models.summary import SummaryConfig, SummarySendRecord
 from app.models.task_log import TaskLog
 from app.models.user import User
@@ -19,6 +24,9 @@ __all__ = [
     "MailMessage",
     "Mailbox",
     "SenderProfile",
+    "ServiceReportConfig",
+    "ServiceReportRun",
+    "ServiceReportSourceRun",
     "SummaryConfig",
     "SummarySendRecord",
     "TaskLog",

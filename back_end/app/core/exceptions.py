@@ -36,8 +36,8 @@ class NotFoundError(BusinessException):
 class ConflictError(BusinessException):
     """状态冲突异常。"""
 
-    def __init__(self, message: str):
-        super().__init__(ErrorCode.CONFLICT, message)
+    def __init__(self, message: str, code: int = ErrorCode.CONFLICT):
+        super().__init__(code, message)
 
 
 class ParamError(BusinessException):
@@ -138,17 +138,19 @@ def register_exception_handlers(app: FastAPI) -> None:
 
 def _http_status_from_code(code: int) -> int:
     """根据契约错误码映射 HTTP 状态码。"""
-    if code == ErrorCode.NOT_FOUND:
+    http_family = code // 100
+
+    if http_family == 404:
         return 404
-    elif code == ErrorCode.CONFLICT:
+    elif http_family == 409:
         return 409
-    elif code == ErrorCode.PARAM_ERROR:
+    elif http_family == 400:
         return 400
-    elif code == ErrorCode.UNAUTHORIZED:
+    elif http_family == 401:
         return 401
-    elif code == ErrorCode.FORBIDDEN:
+    elif http_family == 403:
         return 403
-    elif code == ErrorCode.SYSTEM_ERROR:
+    elif http_family == 500:
         return 500
     else:
         return 400
@@ -176,6 +178,8 @@ def _default_message_for_code(code: int) -> str:
         ErrorCode.FORBIDDEN: "无权限",
         ErrorCode.NOT_FOUND: "资源不存在",
         ErrorCode.CONFLICT: "状态冲突",
+        ErrorCode.SINGLE_PROJECT_CONFLICT: "V1 仅允许单项目试点，当前已有其他启用中的项目配置",
+        ErrorCode.EXPORT_BLOCKED: "当前报告禁止导出",
         ErrorCode.SYSTEM_ERROR: "系统异常",
     }
     return messages.get(code, "未知错误")
