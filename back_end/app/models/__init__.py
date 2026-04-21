@@ -1,3 +1,4 @@
+from app.models.active_task_lock import ActiveTaskLock
 from app.models.analysis_run import AnalysisRun
 from app.models.archive import ArchiveRecord
 from app.models.failure_capture import FailureCaptureRule
@@ -11,6 +12,7 @@ from app.models.user import User
 
 __all__ = [
     "AnalysisRun",
+    "ActiveTaskLock",
     "ArchiveRecord",
     "FailureCaptureRule",
     "FailureMailQueue",

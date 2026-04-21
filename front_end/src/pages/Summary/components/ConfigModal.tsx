@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, Switch, TimePicker, message, Typography, InputNumber } from 'antd';
+import { Modal, Form, Input, Select, Switch, TimePicker, Typography, InputNumber } from 'antd';
 import { createSummaryConfig } from '../../../api/summary';
 import { getMailboxes } from '../../../api/mailbox';
 import type { Mailbox } from '../../../api/types';
+import { appMessage } from '../../../utils/appMessage';
 
 interface ConfigModalProps {
   visible: boolean;
@@ -47,7 +48,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onCancel, onSuccess 
       };
 
       await createSummaryConfig(payload);
-      message.success('配置创建成功');
+      appMessage.success('配置创建成功');
       onSuccess();
     } catch {
       // Handled
@@ -63,7 +64,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onCancel, onSuccess 
       onOk={handleOk}
       onCancel={onCancel}
       confirmLoading={loading}
-      destroyOnClose
+      destroyOnHidden
       width={600}
     >
       <Form form={form} layout="vertical">

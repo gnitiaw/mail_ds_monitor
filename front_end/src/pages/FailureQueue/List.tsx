@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Tag, Button, Space, Form, Input, Select, message, Modal } from 'antd';
+import { Card, Table, Tag, Button, Space, Form, Input, Select, Modal } from 'antd';
 import type { TablePaginationConfig } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { failureApi } from '../../api/failure';
 import type { FailureQueueItem, FailureQueueStatus } from '../../api/failure';
 import dayjs from 'dayjs';
+import { appMessage } from '../../utils/appMessage';
 
 const { Option } = Select;
 
 const statusColorMap: Record<string, string> = {
   new: 'error',
-  acknowledged: 'processing',
+  acknowledged: 'warning',
   resolved: 'success',
 };
 
@@ -81,7 +82,7 @@ const FailureQueueList: React.FC = () => {
         mailbox_ids: values.mailbox_ids,
         lookback_minutes: values.lookback_minutes,
       });
-      message.success('补跑任务已提交');
+      appMessage.success('补跑任务已提交');
       setReplayModalVisible(false);
       fetchData(); // 刷新一下
     } catch {
@@ -140,8 +141,16 @@ const FailureQueueList: React.FC = () => {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <Card>
+    <div className="page-container">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">失败邮件队列</h1>
+          <p className="page-desc">管理和监控邮件提取失败的记录</p>
+        </div>
+        <Button type="default" onClick={() => setReplayModalVisible(true)}>手动补跑</Button>
+      </div>
+
+      <Card className="filter-card">
         <Form form={form} layout="inline" onFinish={handleSearch}>
           <Form.Item name="status" label="状态">
             <Select style={{ width: 120 }} allowClear placeholder="全部">
@@ -166,10 +175,7 @@ const FailureQueueList: React.FC = () => {
         </Form>
       </Card>
 
-      <Card 
-        title="失败邮件队列" 
-        extra={<Button type="default" onClick={() => setReplayModalVisible(true)}>手动补跑</Button>}
-      >
+      <Card className="main-card">
         <Table
           columns={columns}
           dataSource={data}

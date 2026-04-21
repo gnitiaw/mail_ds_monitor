@@ -6,7 +6,27 @@
       "Bash(pip install:*)",
       "Bash(python -c \"from app.core.scheduler import scheduler; print\\(''Scheduler module OK''\\)\")",
       "Bash(python -m py_compile app/services/customer_analysis_service.py app/services/sender_profile_service.py app/core/scheduler.py)",
-      "Bash(uv run:*)"
+      "Bash(uv run:*)",
+      "Bash(~/.claude/skills/gstack/bin/gstack-review-log '{\"\"skill\"\":\"\"plan-eng-review\"\",\"\"timestamp\"\":\"\"2026-03-25T16:00:00\"\",\"\"status\"\":\"\"clean\"\",\"\"unresolved\"\":0,\"\"critical_gaps\"\":0,\"\"issues_found\"\":0,\"\"mode\"\":\"\"HOLD_SCOPE\"\",\"\"commit\"\":\"\"c6e2460\"\"}')",
+      "Bash(~/.claude/skills/gstack/bin/gstack-review-read)",
+      "Bash(gh pr:*)",
+      "Bash(where gh:*)",
+      "Bash(git config:*)",
+      "Bash(echo $GITHUB_TOKEN)",
+      "Bash(start:*)",
+      "Bash(curl -s http://localhost:8000/api/v1/health)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(.venv/Scripts/python.exe -m py_compile app/schemas/mail_message.py app/api/v1/routes/mail_messages.py)",
+      "Bash(npx tsc:*)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/ -v --tb=short)",
+      "Bash(.venv/Scripts/python.exe -m pytest app/tests/test_mail_messages_api.py -v --tb=short)",
+      "Bash(.venv/Scripts/python.exe -m py_compile app/api/v1/routes/mail_messages.py)",
+      "Bash(.venv/Scripts/python.exe -m pytest app/tests/ -v --tb=short)",
+      "Bash(curl -X POST http://localhost:8000/api/v1/mail-messages/batch-retry-extraction -H \"Content-Type: application/json\" -d '{\"\"message_ids\"\": [\"\"test\"\"]}')",
+      "Bash(curl -s http://localhost:8000/openapi.json)",
+      "Bash(tasklist)",
+      "Bash(curl -s http://localhost:8000/api/v1/mail-messages)",
+      "Bash(curl:*)"
     ]
   }
 }

@@ -1,40 +1,116 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Alert, Button, Card, Descriptions, Empty, Result, Space, Spin, Tag, Typography } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, ReloadOutlined, SyncOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import DOMPurify from 'dompurify';
-import { getMailMessageDetail } from '../../api/mailMessage';
+import { getMailMessageDetail, retryExtraction } from '../../api/mailMessage';
+import { getTaskLogDetail } from '../../api/taskLog';
 import type { RawMailDetail } from '../../api/types';
+import { appMessage } from '../../utils/appMessage';
+import { TASK_POLL_INTERVAL_MS, buildSingleRetryMessage, isTaskTerminal } from './retryTaskUtils';
 
 const RawMailDetailView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [data, setData] = useState<RawMailDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [retrySubmitting, setRetrySubmitting] = useState(false);
+  const [pollingJobId, setPollingJobId] = useState<string | null>(null);
   const [error, setError] = useState(false);
 
+  const fetchDetail = async () => {
+    if (!id) {
+      setLoading(false);
+      setError(true);
+      return;
+    }
+
+    setLoading(true);
+    setError(false);
+    try {
+      const res = await getMailMessageDetail(id);
+      setData(res);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchDetail = async () => {
-      if (!id) {
-        setLoading(false);
-        setError(true);
-        return;
-      }
-      setLoading(true);
-      setError(false);
+    fetchDetail();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  useEffect(() => {
+    if (!pollingJobId) {
+      return;
+    }
+
+    let cancelled = false;
+    let timerId: number | undefined;
+
+    const pollTask = async () => {
       try {
-        const res = await getMailMessageDetail(id);
-        setData(res);
+        const task = await getTaskLogDetail(pollingJobId);
+        if (cancelled) {
+          return;
+        }
+
+        if (!isTaskTerminal(task.status)) {
+          timerId = window.setTimeout(pollTask, TASK_POLL_INTERVAL_MS);
+          return;
+        }
+
+        setPollingJobId(null);
+        await fetchDetail();
+
+        if (task.status === 'failed') {
+          appMessage.error(task.error_message || '重试任务失败');
+          return;
+        }
+        appMessage.success(buildSingleRetryMessage(task));
       } catch {
-        setError(true);
-      } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setPollingJobId(null);
+          appMessage.error('任务状态查询失败');
+        }
       }
     };
 
-    fetchDetail();
-  }, [id]);
+    pollTask();
+
+    return () => {
+      cancelled = true;
+      if (timerId) {
+        window.clearTimeout(timerId);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pollingJobId]);
+
+  const handleRetry = async () => {
+    if (!id) {
+      return;
+    }
+
+    try {
+      setRetrySubmitting(true);
+      const res = await retryExtraction(id);
+      setPollingJobId(res.job_id);
+
+      if (res.reused_existing_job) {
+        appMessage.info('已复用进行中的重试任务，详情会自动刷新');
+        return;
+      }
+      appMessage.success('重试任务已受理，正在后台处理');
+    } catch {
+      //
+    } finally {
+      setRetrySubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -67,7 +143,7 @@ const RawMailDetailView: React.FC = () => {
 
   return (
     <div className="page-container">
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Space align="center" size="middle">
           <Button
             icon={<ArrowLeftOutlined />}
@@ -81,7 +157,27 @@ const RawMailDetailView: React.FC = () => {
             原始邮件详情
           </Typography.Title>
         </Space>
+        {data.extraction_status === 'failed' && (data.retry_count ?? 0) < data.max_retries && (
+          <Button
+            type="primary"
+            icon={<ReloadOutlined />}
+            loading={retrySubmitting || Boolean(pollingJobId)}
+            onClick={handleRetry}
+          >
+            重试提取
+          </Button>
+        )}
       </div>
+
+      {pollingJobId && (
+        <Alert
+          showIcon
+          type="info"
+          style={{ marginBottom: 16 }}
+          title="后台重试任务处理中"
+          description="页面会自动轮询任务状态，完成后刷新详情。"
+        />
+      )}
 
       <Card title="基础信息" className="main-card" style={{ marginBottom: 16 }}>
         <Descriptions column={2} bordered size="small">
@@ -104,9 +200,16 @@ const RawMailDetailView: React.FC = () => {
             </Tag>
           </Descriptions.Item>
           <Descriptions.Item label="提取状态">
-            <Tag color={data.extraction_status === 'success' ? 'success' : data.extraction_status === 'failed' ? 'error' : 'default'}>
+            <Tag
+              color={data.extraction_status === 'success' ? 'success' : data.extraction_status === 'failed' ? 'error' : 'processing'}
+              icon={data.extraction_status === 'pending' ? <SyncOutlined spin /> : undefined}
+            >
               {data.extraction_status}
             </Tag>
+          </Descriptions.Item>
+          <Descriptions.Item label="重试次数">{data.retry_count ?? 0}/{data.max_retries}</Descriptions.Item>
+          <Descriptions.Item label="最近重试时间">
+            {data.last_retry_at ? dayjs(data.last_retry_at).format('YYYY-MM-DD HH:mm:ss') : '-'}
           </Descriptions.Item>
         </Descriptions>
       </Card>
@@ -115,7 +218,7 @@ const RawMailDetailView: React.FC = () => {
         <Card className="main-card" style={{ marginBottom: 16 }}>
           {data.parse_error && (
             <Alert
-              message="解析失败原因"
+              title="解析失败原因"
               description={data.parse_error}
               type="error"
               showIcon
@@ -124,7 +227,7 @@ const RawMailDetailView: React.FC = () => {
           )}
           {data.extraction_error && (
             <Alert
-              message="提取失败原因"
+              title="提取失败原因"
               description={data.extraction_error}
               type="error"
               showIcon

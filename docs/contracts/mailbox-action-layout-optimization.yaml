@@ -1,0 +1,90 @@
+feature: mailbox-action-layout-optimization
+type: ui-only
+summary: 邮箱管理列表操作列改为单入口下拉菜单，不涉及后端接口变更。
+
+backward_compatibility:
+  compatible: true
+  notes:
+    - 不新增接口
+    - 不修改现有请求参数和响应结构
+    - 仅调整前端交互布局
+
+auth:
+  unchanged: true
+  notes:
+    - 继续沿用现有邮箱管理页面登录态和接口鉴权
+
+endpoints:
+  - endpoint: 获取邮箱列表
+    method: GET
+    path: /api/v1/mailboxes
+    path_params: []
+    query_params:
+      - name: page
+        type: integer
+        required: false
+      - name: page_size
+        type: integer
+        required: false
+      - name: status
+        type: string
+        required: false
+    request_body: null
+    response_body: 保持现有邮箱分页列表结构不变
+    field_meaning: 无变化
+    enum_definition: 无变化
+    auth_requirement: 保持现状
+    idempotency: 查询接口，天然幂等
+    error_codes: 保持现状
+    compatibility: 完全兼容
+
+  - endpoint: 触发邮箱拉取
+    method: POST
+    path: /api/v1/mailboxes/{mailbox_id}/pull
+    path_params:
+      - name: mailbox_id
+        type: string
+        required: true
+    query_params: []
+    request_body: 保持现有拉取请求结构不变
+    response_body: 保持现有任务触发响应结构不变
+    field_meaning: 无变化
+    enum_definition: 无变化
+    auth_requirement: 保持现状
+    idempotency: 保持现状
+    error_codes: 保持现状
+    compatibility: 完全兼容
+
+  - endpoint: 处理已拉取邮件
+    method: POST
+    path: /api/v1/mailboxes/{mailbox_id}/process
+    path_params:
+      - name: mailbox_id
+        type: string
+        required: true
+    query_params: []
+    request_body: 保持现有处理请求结构不变
+    response_body: 保持现有处理结果结构不变
+    field_meaning: 无变化
+    enum_definition: 无变化
+    auth_requirement: 保持现状
+    idempotency: 保持现状
+    error_codes: 保持现状
+    compatibility: 完全兼容
+
+  - endpoint: 查看原始邮件列表
+    method: GET
+    path: /mail-messages?mailbox_id={mailbox_id}
+    path_params: []
+    query_params:
+      - name: mailbox_id
+        type: string
+        required: true
+    request_body: null
+    response_body: 前端路由跳转，复用现有页面
+    field_meaning: 无变化
+    enum_definition: 无变化
+    auth_requirement: 保持现状
+    idempotency: 查询/跳转行为
+    error_codes: 保持现状
+    compatibility: 完全兼容

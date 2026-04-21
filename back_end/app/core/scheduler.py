@@ -81,6 +81,20 @@ def add_analysis_job(run_id: str, config_id: str) -> None:
     logger.info(f"Scheduled analysis job: {job_id}")
 
 
+def add_extraction_retry_job(job_id: str) -> None:
+    """Add extraction retry job to the scheduler."""
+    from app.services.extraction_retry_service import execute_extraction_retry_async
+
+    scheduler.add_job(
+        execute_extraction_retry_async,
+        id=f"task_log_{job_id}",
+        args=[settings.sqlalchemy_database_uri, job_id],
+        replace_existing=True,
+        misfire_grace_time=3600,
+    )
+    logger.info("Scheduled extraction retry job: task_log_%s", job_id)
+
+
 def recover_stuck_runs() -> None:
     """恢复卡在 running 状态的分析任务。
 
@@ -90,7 +104,9 @@ def recover_stuck_runs() -> None:
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
     from app.models.analysis_run import AnalysisRun
-    from app.models.enums import AnalysisRunStatus
+    from app.models.enums import AnalysisRunStatus, TaskStatus, TaskType
+    from app.models.task_log import TaskLog
+    from app.services.task_log_service import release_task_lock
 
     engine = create_engine(settings.sqlalchemy_database_uri)
     SessionLocal = sessionmaker(bind=engine)
@@ -113,8 +129,26 @@ def recover_stuck_runs() -> None:
                 run.error_message = "Task lost due to server restart"
                 run.finished_at = datetime.now(timezone.utc)
 
+        stuck_task_logs = db.query(TaskLog).filter(
+            TaskLog.task_type == TaskType.AI_EXTRACTION.value,
+            TaskLog.status.in_([TaskStatus.PENDING.value, TaskStatus.RUNNING.value]),
+        ).all()
+
+        for task_log in stuck_task_logs:
+            job = scheduler.get_job(f"task_log_{task_log.id}")
+            if job is None:
+                logger.warning("Recovering stuck extraction retry task: %s", task_log.id)
+                task_log.status = TaskStatus.FAILED.value
+                task_log.finished_at = datetime.now(timezone.utc)
+                task_log.error_message = "Task lost due to server restart"
+                release_task_lock(db, task_log_id=task_log.id)
+
         db.commit()
-        logger.info(f"Recovered {len(stuck_runs)} stuck analysis runs")
+        logger.info(
+            "Recovered %s stuck analysis runs and %s stuck extraction retry tasks",
+            len(stuck_runs),
+            len(stuck_task_logs),
+        )
 
     except Exception as e:
         logger.exception(f"Failed to recover stuck runs: {e}")

@@ -35,7 +35,7 @@ const SendModal: React.FC<SendModalProps> = ({ visible, onCancel, onSend }) => {
       onOk={handleOk}
       onCancel={onCancel}
       confirmLoading={loading}
-      destroyOnClose
+      destroyOnHidden
       width={500}
     >
       <Form form={form} layout="vertical" style={{ marginTop: 24 }}>

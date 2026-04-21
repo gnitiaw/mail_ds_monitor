@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, message, Card, Typography } from 'antd';
-import { PlusOutlined, SyncOutlined, EditOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Card, Typography, Dropdown } from 'antd';
+import type { MenuProps } from 'antd';
+import { PlusOutlined, SyncOutlined, EditOutlined, InboxOutlined, MoreOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { getMailboxes, processMailbox, pullMailbox } from '../../api/mailbox';
 import type { Mailbox } from '../../api/types';
 import MailboxModal from './components/MailboxModal';
+import { appMessage } from '../../utils/appMessage';
 
 const MailboxList: React.FC = () => {
   const [data, setData] = useState<Mailbox[]>([]);
@@ -33,12 +35,14 @@ const MailboxList: React.FC = () => {
 
   useEffect(() => {
     fetchMailboxes();
+    // fetchMailboxes uses current pagination state and is intentionally triggered by page changes only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize]);
 
   const handlePull = async (id: string) => {
     try {
       await pullMailbox(id, { force_full_sync: false });
-      message.success('已触发拉取任务');
+      appMessage.success('已触发拉取任务');
     } catch {
       // error handled in interceptor
     }
@@ -47,11 +51,43 @@ const MailboxList: React.FC = () => {
   const handleProcess = async (id: string) => {
     try {
       const res = await processMailbox(id, { lookback_minutes: 1440, limit: 50 });
-      message.success(`处理完成：归档 ${res.archive_success_count} 封，失败命中 ${res.failure_matched_count} 封`);
+      appMessage.success(`处理完成：归档 ${res.archive_success_count} 封，失败命中 ${res.failure_matched_count} 封`);
     } catch {
       // error handled in interceptor
     }
   };
+
+  const buildMoreMenuItems = (record: Mailbox): MenuProps['items'] => [
+    {
+      key: 'pull',
+      icon: <SyncOutlined />,
+      label: '拉取邮件',
+      disabled: record.status !== 'enabled',
+      onClick: () => handlePull(record.id),
+    },
+    {
+      key: 'process',
+      icon: <PlayCircleOutlined />,
+      label: '处理已拉取邮件',
+      disabled: record.status !== 'enabled',
+      onClick: () => handleProcess(record.id),
+    },
+    {
+      key: 'edit',
+      icon: <EditOutlined />,
+      label: '编辑邮箱',
+      onClick: () => {
+        setEditingMailbox(record);
+        setModalVisible(true);
+      },
+    },
+    {
+      key: 'messages',
+      icon: <InboxOutlined />,
+      label: '查看原始邮件',
+      onClick: () => navigate(`/mail-messages?mailbox_id=${record.id}`),
+    },
+  ];
 
   const columns = [
     {
@@ -73,7 +109,7 @@ const MailboxList: React.FC = () => {
     {
       title: '服务器',
       key: 'server',
-      render: (_: any, record: Mailbox) => `${record.host}:${record.port}`,
+      render: (_: unknown, record: Mailbox) => `${record.host}:${record.port}`,
     },
     {
       title: '状态',
@@ -94,24 +130,14 @@ const MailboxList: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: Mailbox) => (
-        <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => {
-            setEditingMailbox(record);
-            setModalVisible(true);
-          }}>
-            编辑
+      width: 100,
+      align: 'center' as const,
+      render: (_: unknown, record: Mailbox) => (
+        <Dropdown menu={{ items: buildMoreMenuItems(record) }} trigger={['click']} placement="bottomRight">
+          <Button type="link" icon={<MoreOutlined />}>
+            操作
           </Button>
-          <Button type="link" onClick={() => navigate(`/mail-messages?mailbox_id=${record.id}`)}>
-            查看原始邮件
-          </Button>
-          <Button type="link" icon={<SyncOutlined />} onClick={() => handlePull(record.id)} disabled={record.status !== 'enabled'}>
-            拉取
-          </Button>
-          <Button type="link" onClick={() => handleProcess(record.id)} disabled={record.status !== 'enabled'}>
-            处理已拉取邮件
-          </Button>
-        </Space>
+        </Dropdown>
       ),
     },
   ];

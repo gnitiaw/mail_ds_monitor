@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, Table, Tag, Button, Space, Typography, message, Modal, Form, DatePicker, Drawer, Checkbox } from 'antd';
+import { Card, Table, Tag, Button, Space, Typography, Modal, Form, DatePicker, Drawer, Checkbox } from 'antd';
 import { SyncOutlined, EyeOutlined, SendOutlined } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { TablePaginationConfig } from 'antd';
 import { summaryApi, sendSummary } from '../../api/summary';
 import type { AnalysisRun, AnalysisRunDetail } from '../../api/types';
 import dayjs from 'dayjs';
+import { appMessage } from '../../utils/appMessage';
+
+function getDrawerWidth() {
+  if (typeof window === 'undefined') return 700;
+  return Math.min(700, window.innerWidth - 48);
+}
 
 const { RangePicker } = DatePicker;
 
@@ -68,7 +74,7 @@ const AnalysisRuns: React.FC = () => {
         window_end: values.timeRange[1].toISOString(),
         force_rerun: values.force_rerun,
       });
-      message.success('已触发分析运行');
+      appMessage.success('已触发分析运行');
       setCreateVisible(false);
       fetchData(1);
     } catch {
@@ -95,7 +101,7 @@ const AnalysisRuns: React.FC = () => {
     if (!configId) return;
     try {
       await sendSummary(configId, { analysis_run_id: runId });
-      message.success('已触发发送任务');
+      appMessage.success('已触发发送任务');
     } catch {
       // handled
     }
@@ -140,8 +146,8 @@ const AnalysisRuns: React.FC = () => {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="page-container">
+      <div className="back-nav-bar">
         <Space align="center">
           <Button onClick={() => navigate(-1)}>返回配置列表</Button>
           <Typography.Title level={4} style={{ margin: 0 }}>分析运行记录</Typography.Title>
@@ -149,7 +155,7 @@ const AnalysisRuns: React.FC = () => {
         <Button type="primary" onClick={() => setCreateVisible(true)}>新建运行</Button>
       </div>
 
-      <Card>
+      <Card className="main-card">
         <Table
           columns={columns}
           dataSource={data}
@@ -166,7 +172,7 @@ const AnalysisRuns: React.FC = () => {
         onOk={handleCreateOk}
         onCancel={() => setCreateVisible(false)}
         confirmLoading={createLoading}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={createForm} layout="vertical">
           <Form.Item name="timeRange" label="分析时间窗口" rules={[{ required: true }]}>
@@ -180,7 +186,7 @@ const AnalysisRuns: React.FC = () => {
 
       <Drawer
         title="分析运行结果"
-        width={700}
+        width={getDrawerWidth()}
         open={detailVisible}
         onClose={() => setDetailVisible(false)}
       >
@@ -195,7 +201,7 @@ const AnalysisRuns: React.FC = () => {
             )}
             {detailData.status === 'running' && (
               <Card size="small" style={{ textAlign: 'center', padding: 24 }}>
-                <SyncOutlined spin style={{ fontSize: 32, color: '#1890ff', marginBottom: 12 }} />
+                <SyncOutlined spin style={{ fontSize: 32, color: 'var(--matcha-600)', marginBottom: 12 }} />
                 <Typography.Title level={5}>分析进行中...</Typography.Title>
                 <Typography.Text type="secondary">请稍后刷新查看结果</Typography.Text>
               </Card>
@@ -209,12 +215,12 @@ const AnalysisRuns: React.FC = () => {
             {detailData.result_payload?.summary_markdown ? (
               <>
                 <Card size="small" title="邮件 Markdown 预览">
-                  <pre style={{ whiteSpace: 'pre-wrap', background: '#f5f5f5', padding: 12 }}>
+                  <pre style={{ whiteSpace: 'pre-wrap', background: 'var(--oat-light)', padding: 12, borderRadius: 'var(--radius-base)' }}>
                     {String(detailData.result_payload.summary_markdown)}
                   </pre>
                 </Card>
                 <Card size="small" title="分析概览 (Overview)">
-                  <pre style={{ whiteSpace: 'pre-wrap', background: '#f5f5f5', padding: 12 }}>
+                  <pre style={{ whiteSpace: 'pre-wrap', background: 'var(--oat-light)', padding: 12, borderRadius: 'var(--radius-base)' }}>
                     {JSON.stringify(detailData.result_payload?.overview || {}, null, 2)}
                   </pre>
                 </Card>
