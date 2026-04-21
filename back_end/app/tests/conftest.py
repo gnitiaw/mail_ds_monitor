@@ -12,6 +12,14 @@ from app.main import create_application
 from app.models import load_all_models
 
 
+@pytest.fixture(autouse=True)
+def disable_scheduler(monkeypatch: pytest.MonkeyPatch) -> None:
+    """测试期间禁用 APScheduler，避免连接真实 MySQL job store。"""
+    monkeypatch.setattr("app.core.scheduler.init_scheduler", lambda: None)
+    monkeypatch.setattr("app.core.scheduler.recover_stuck_runs", lambda: None)
+    monkeypatch.setattr("app.core.scheduler.shutdown_scheduler", lambda wait=True: None)
+
+
 @pytest.fixture(scope="function")
 def engine():
     """创建测试数据库引擎（每个测试独立的内存 SQLite）。"""

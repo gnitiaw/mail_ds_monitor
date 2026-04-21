@@ -17,6 +17,9 @@ import AnalysisRuns from './pages/Summary/AnalysisRuns';
 import FailureQueueList from './pages/FailureQueue/List';
 import FailureQueueDetailView from './pages/FailureQueue/Detail';
 import SenderList from './pages/Sender/List';
+import ServiceReportConfigList from './pages/ServiceReport/ConfigList';
+import ServiceReportRunList from './pages/ServiceReport/RunList';
+import ServiceReportRunDetail from './pages/ServiceReport/RunDetail';
 
 const App: React.FC = () => {
   return (
@@ -115,6 +118,9 @@ const App: React.FC = () => {
                 <Route path="summary-configs" element={<SummaryConfigList />} />
                 <Route path="summary-configs/:configId/analysis-runs" element={<AnalysisRuns />} />
                 <Route path="summary-sends" element={<SummarySendRecords />} />
+                <Route path="service-report-configs" element={<ServiceReportConfigList />} />
+                <Route path="service-report-runs" element={<ServiceReportRunList />} />
+                <Route path="service-report-runs/:runId" element={<ServiceReportRunDetail />} />
               </Route>
             </Route>
           </Routes>
