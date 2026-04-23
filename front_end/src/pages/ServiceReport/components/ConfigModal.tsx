@@ -101,7 +101,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ visible, onCancel, onSuccess 
       onOk={handleOk}
       onCancel={onCancel}
       confirmLoading={loading}
-      destroyOnClose
+      destroyOnHidden
       width={720}
     >
       <Form form={form} layout="vertical">

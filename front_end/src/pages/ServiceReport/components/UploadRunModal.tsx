@@ -90,7 +90,7 @@ const UploadRunModal: React.FC<UploadRunModalProps> = ({ visible, config, onCanc
       onOk={handleOk}
       onCancel={onCancel}
       confirmLoading={loading}
-      destroyOnClose
+      destroyOnHidden
       okText="开始生成"
       width={720}
     >

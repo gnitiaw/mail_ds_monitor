@@ -185,7 +185,7 @@ const RunDetail: React.FC = () => {
       <Alert
         type={completeness.alertType}
         showIcon
-        message={`报告完整度：${completeness.label}`}
+        title={`报告完整度：${completeness.label}`}
         description={completeness.description}
       />
 
@@ -197,7 +197,7 @@ const RunDetail: React.FC = () => {
         </Col>
         <Col xs={24} md={8}>
           <Card className="main-card">
-            <Statistic title="完整度" value={completeness.label} valueStyle={{ color: completenessValueColor[detail.completeness_status] }} />
+            <Statistic title="完整度" value={completeness.label} styles={{ content: { color: completenessValueColor[detail.completeness_status] } }} />
           </Card>
         </Col>
         <Col xs={24} md={8}>
@@ -250,7 +250,7 @@ const RunDetail: React.FC = () => {
                   type={section.data_status === 'blocked' ? 'error' : 'warning'}
                   showIcon
                   style={{ marginBottom: 12 }}
-                  message={section.blocking_reason}
+                  title={section.blocking_reason}
                 />
               )}
               <pre style={{ whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'inherit', lineHeight: 1.7 }}>
@@ -286,7 +286,7 @@ const RunDetail: React.FC = () => {
               dataSource={detail.source_snapshot_summary.source_results || []}
               renderItem={(item) => (
                 <List.Item>
-                  <Space direction="vertical" size={2} style={{ width: '100%' }}>
+                  <Space orientation="vertical" size={2} style={{ width: '100%' }}>
                     <Space>
                       <Typography.Text strong>{item.source_type}</Typography.Text>
                       <Tag color={item.status === 'success' ? 'success' : item.status === 'partial_success' ? 'warning' : 'error'}>
@@ -306,7 +306,7 @@ const RunDetail: React.FC = () => {
       </Row>
 
       <Card className="main-card" title="人工补充说明">
-        <Space direction="vertical" style={{ width: '100%' }} size={12}>
+        <Space orientation="vertical" style={{ width: '100%' }} size={12}>
           <Input.TextArea
             value={manualNote}
             onChange={(event) => setManualNote(event.target.value)}
@@ -329,7 +329,7 @@ const RunDetail: React.FC = () => {
           locale={{ emptyText: '暂无证据引用' }}
           renderItem={(item, index) => (
             <List.Item key={`${String(item.ref_id ?? index)}-${index}`}>
-              <Space direction="vertical" size={2}>
+              <Space orientation="vertical" size={2}>
                 <Typography.Text strong>{String(item.title ?? item.ref_id ?? `evidence-${index + 1}`)}</Typography.Text>
                 <Typography.Text type="secondary">
                   来源：{String(item.source_type ?? '-')} / 类型：{String(item.ref_type ?? '-')}
