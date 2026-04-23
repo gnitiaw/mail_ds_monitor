@@ -1,142 +1,149 @@
-### 项目简介
+# Mail DS Monitor
 
-`mail_ds_monitor` 是一个围绕邮件监控相关业务场景建设的研发工作区仓库，用于统一管理：
+邮件数据监控系统：自动拉取邮箱邮件，通过 AI 提取结构化信息，生成每日汇总报告并发送。
 
-- `back_end`：后端项目
-- `front_end`：前端项目
+## Quick Start
 
-该仓库不仅存放代码，也沉淀研发过程中的关键文档与流程约束，确保开发过程清晰、可追踪、可 review、可测试、可回滚。
+### Prerequisites
 
-### 工作区定位
+- Python >= 3.12
+- Node.js >= 18
+- MySQL 8.0+
+- Git
 
-本仓库的核心目标不是简单存放前后端代码，而是建立一套标准化研发协作机制，包括：
-
-- 需求提出与功能拆解
-- 功能说明文档沉淀
-- 接口契约设计与确认
-- 后端与前端按契约并行开发
-- 联调测试
-- Review 结论记录
-- 发布说明归档
-
-### 标准功能开发流程
-
-1. 提出新功能需求  
-2. 生成功能说明文档 `docs/features/`  
-3. 生成接口契约文档 `docs/contracts/`  
-4. 确认需求与契约  
-5. 后端实现  
-6. 前端实现  
-7. 联调与测试  
-8. Review  
-9. 合并与发布  
-
-### 目录说明
-
-```text
-mail_ds_monitor/
-├─ .claude/
-├─ back_end/              # 后端项目
-├─ front_end/             # 前端项目
-├─ docs/
-│  ├─ features/           # 功能说明文档
-│  ├─ contracts/          # 接口契约文档
-│  ├─ reviews/            # Review 结论
-│  └─ release-notes/      # 发布说明
-├─ scripts/               # 工作区脚本
-├─ AGENTS.md
-└─ README.md
-```
-
-### 研发约定
-
-- 未完成功能说明和接口契约前，不进入正式编码
-- 前后端开发以契约为准
-- 所有变更必须可 review、可测试、可回滚
-
-### 项目特点
-
-- 采用前后端分离的工作区管理方式
-- 强调文档先行和接口契约驱动开发
-- 研发流程清晰，便于协作、审计与维护
-- 支持功能开发、联调、review 和发布全流程管理
-- 适合作为轻量级工程化协作仓库实践
-
-### Codex 在项目中的作用
-
-本项目在建设和维护过程中持续使用 OpenAI Codex，用于辅助：
-
-- 功能设计与实现
-- 文档编写与整理
-- 接口契约生成
-- 代码优化与重构
-- Review 流程支持
-- 工作区协同开发
-
-**This project is built and maintained with the help of OpenAI Codex.**
-
-### 使用说明
-
-该仓库为工作区仓库，具体运行方式取决于 `back_end` 和 `front_end` 子项目。
-
-一般使用方式如下：
-
-#### 1. 克隆仓库
+### 1. Clone
 
 ```bash
 git clone https://github.com/gnitiaw/mail_ds_monitor.git
 cd mail_ds_monitor
 ```
 
-#### 2. 阅读功能说明与契约文档
-
-优先查看：
-
-- `docs/features/`
-- `docs/contracts/`
-
-#### 3. 分别进入前后端项目开发
-
-后端开发：
+### 2. Backend Setup
 
 ```bash
 cd back_end
+
+# Create virtual environment
+python -m venv .venv
+.venv\Scripts\activate        # Windows
+# source .venv/bin/activate   # Linux/macOS
+
+# Install dependencies (includes dev tools: pytest, ruff)
+pip install -e ".[dev]"
+
+# Configure environment
+cp .env.example .env
+# Edit .env — at minimum set MySQL credentials and LLM API key
 ```
 
-前端开发：
+Key `.env` fields to configure:
+
+| Field | Description |
+|-------|-------------|
+| `MYSQL_HOST` / `MYSQL_PORT` / `MYSQL_DATABASE` / `MYSQL_USER` / `MYSQL_PASSWORD` | Database connection |
+| `LLM_BASE_URL` / `LLM_API_KEY` / `LLM_MODEL` | AI extraction (OpenAI-compatible endpoint) |
+| `SECRET_KEY` | JWT signing key (change from default!) |
+
+Set `DB_AUTO_CREATE_TABLES=true` for auto table creation on first run.
+
+```bash
+# Start backend
+uvicorn app.main:app --reload
+```
+
+Backend runs at http://localhost:8000, API docs at http://localhost:8000/docs.
+
+### 3. Frontend Setup
 
 ```bash
 cd front_end
+npm install
+npm run dev
 ```
 
-#### 4. 按工作区流程进行联调、Review 与发布
+Frontend runs at http://localhost:5173, proxies `/api` to backend.
 
-开发完成后，应补充或更新：
+### 4. Seed Demo Data
 
-- `docs/reviews/`
-- `docs/release-notes/`
+```bash
+cd back_end
+.venv\Scripts\activate
+python scripts/seed_pilot_data.py
+```
 
-### 适用价值
+Creates demo users: `admin` / `admin123` (admin role), `operator` / `operator123` (operator role).
 
-本仓库适合作为以下场景的参考：
+### 5. Verify
 
-- 前后端分离项目的统一工作区管理
-- 文档驱动 / 契约驱动开发实践
-- AI 辅助研发协作流程
-- 使用 Codex 参与真实工程开发的案例
+Open http://localhost:5173, log in with `admin` / `admin123`.
 
-### 推荐 GitHub Topics
+## Architecture
 
-建议为仓库添加以下 Topics：
+Monorepo, 前后端分离，REST API 通信。
 
-- `ai-assisted-development`
-- `codex`
-- `automation`
-- `monitoring`
-- `frontend-backend-workspace`
-- `contract-first`
+**Backend** (FastAPI + SQLAlchemy + MySQL):
+- `app/api/v1/` — REST 路由，按领域组织
+- `app/services/` — 业务逻辑层（IMAP、AI 提取、SMTP、调度）
+- `app/models/` — SQLAlchemy ORM 模型
+- `app/schemas/` — Pydantic 请求/响应 schema
+- `app/core/` — 配置、安全（JWT）、异常处理
 
-### 维护者说明
+**Frontend** (React 19 + TypeScript + Ant Design 6 + Vite 8):
+- `src/pages/` — 按功能域组织的页面组件
+- `src/components/` — 共享组件（Layout、AuthRoute）
+- `src/api/` — Axios API 客户端
 
-我是该项目的核心维护者。  
-该仓库在真实工作需求驱动下持续演进，并在从 0 到 1 的建设与后续迭代过程中长期使用 Codex 参与开发与 Review。
+## Commands
+
+### Backend
+
+```bash
+cd back_end
+uvicorn app.main:app --reload       # Dev server :8000
+pytest                               # Run tests
+pytest app/tests/test_xxx.py -k "test_name"  # Single test
+ruff check .                         # Lint
+ruff check . --fix                   # Auto-fix lint issues
+```
+
+### Frontend
+
+```bash
+cd front_end
+npm run dev           # Dev server :5173
+npm run build         # Production build (tsc + vite)
+npm run lint          # ESLint
+npm run test          # Vitest (watch mode)
+npm run test:run      # Vitest (single run)
+```
+
+## Business Flows
+
+1. IMAP 拉取邮件 → `mail_messages` 表
+2. AI (LLM) 提取结构化数据 → `archive_records` 表
+3. 提取失败的邮件进入 `failure_mail_queue`，支持重试
+4. 每日汇总按 `summary_configs` 配置生成并发送
+5. 发件人画像关联客户分析
+6. 服务报告聚合多源数据（巡检、漏洞、工时、禅道缺陷）
+
+## Directory Structure
+
+```
+mail_ds_monitor/
+├─ back_end/              # Backend (FastAPI)
+├─ front_end/             # Frontend (React + Vite)
+├─ scripts/               # Utility scripts (seed data, migrations)
+├─ docs/
+│  ├─ features/           # Feature specifications
+│  ├─ contracts/          # API contracts
+│  ├─ reviews/            # Review records
+│  └─ release-notes/      # Release notes
+├─ CLAUDE.md              # AI assistant instructions
+└─ DESIGN.md              # Clay design system spec
+```
+
+## Development Workflow
+
+- 新功能先完成 `docs/features/` 功能说明和 `docs/contracts/` 接口契约
+- 接口契约变更需输出 diff、影响分析、兼容性说明
+- 所有变更可 review、可测试、可回滚

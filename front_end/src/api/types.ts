@@ -54,7 +54,7 @@ export interface ArchiveDetail extends Archive {
   recipients?: string[];
   body_text?: string;
   body_html?: string;
-  extracted_fields?: Record<string, any>;
+  extracted_fields?: Record<string, unknown>;
   model_name?: string;
   prompt_version?: string;
   parse_error?: string | null;

@@ -25,7 +25,12 @@ const App: React.FC = () => {
   return (
     <ConfigProvider
       locale={zhCN}
-      renderEmpty={() => <Empty description="暂无数据" />}
+      renderEmpty={() => (
+        <Empty
+          description={<span style={{ color: 'var(--warm-silver)', fontSize: 14, letterSpacing: '-0.14px' }}>暂无数据</span>}
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        />
+      )}
       theme={{
         token: {
           colorPrimary: '#078a52',

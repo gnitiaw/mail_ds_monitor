@@ -73,6 +73,19 @@ def create_application() -> FastAPI:
 
     @app.on_event("startup")
     def on_startup() -> None:
+        # DB connection health check
+        from sqlalchemy import text
+        from app.db.session import engine
+
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            logger.info("Database connection OK")
+        except Exception as e:
+            logger.error(f"Database connection failed: {e}")
+            logger.error("Check your .env — MYSQL_HOST, MYSQL_PORT, MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD")
+            raise
+
         init_db_if_enabled()
 
         # 初始化 APScheduler 并恢复卡住的任务

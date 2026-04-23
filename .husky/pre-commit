@@ -1,0 +1,7 @@
+#!/bin/sh
+# Lint staged files
+# Frontend: eslint on .ts/.tsx
+# Backend: ruff on .py
+
+cd front_end && npx lint-staged
+cd ..

@@ -464,6 +464,15 @@ code, pre, .font-mono {
 }
 
 /* Menu */
+.ant-menu-item-group-title {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1.08px !important;
+  color: var(--warm-silver) !important;
+  font-feature-settings: "ss03", "ss10", "ss11", "ss12";
+}
+
 .ant-menu-item-selected {
   background: var(--oat-light) !important;
   color: var(--matcha-600) !important;
@@ -471,12 +480,50 @@ code, pre, .font-mono {
 }
 
 /* Pagination */
-.ant-pagination-item-active {
+.ant-pagination-item {
+  border-color: var(--oat-border) !important;
+  border-radius: var(--radius-pill) !important;
+  transition: all 0.15s ease;
+}
+
+.ant-pagination-item a {
+  color: var(--warm-charcoal) !important;
+}
+
+.ant-pagination-item:hover {
   border-color: var(--matcha-600) !important;
 }
 
-.ant-pagination-item-active a {
+.ant-pagination-item:hover a {
   color: var(--matcha-600) !important;
+}
+
+.ant-pagination-item-active {
+  background: var(--matcha-600) !important;
+  border-color: var(--matcha-600) !important;
+  box-shadow: var(--shadow-clay);
+}
+
+.ant-pagination-item-active a {
+  color: var(--clay-white) !important;
+}
+
+.ant-pagination-prev .ant-pagination-item-link,
+.ant-pagination-next .ant-pagination-item-link {
+  border-color: var(--oat-border) !important;
+  border-radius: var(--radius-pill) !important;
+  color: var(--warm-charcoal) !important;
+}
+
+.ant-pagination-prev:hover .ant-pagination-item-link,
+.ant-pagination-next:hover .ant-pagination-item-link {
+  border-color: var(--matcha-600) !important;
+  color: var(--matcha-600) !important;
+}
+
+.ant-pagination-options .ant-select-selector {
+  border-color: var(--oat-border) !important;
+  border-radius: var(--radius-sharp) !important;
 }
 
 /* Dropdown */
@@ -632,6 +679,8 @@ code, pre, .font-mono {
 .login-submit-btn:hover {
   background: var(--matcha-800) !important;
   border-color: var(--matcha-800) !important;
+  transform: rotateZ(-4deg) translateY(-2px);
+  box-shadow: var(--shadow-hover-hard) !important;
 }
 
 /* ============================================

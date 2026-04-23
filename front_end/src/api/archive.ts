@@ -10,9 +10,9 @@ export const getArchives = (params?: {
   page?: number;
   page_size?: number;
 }) => {
-  return request.get<any, PaginatedData<Archive>>('/archives', { params });
+  return request.get<unknown, PaginatedData<Archive>>('/archives', { params });
 };
 
 export const getArchiveDetail = (id: string) => {
-  return request.get<any, ArchiveDetail>(`/archives/${id}`);
+  return request.get<unknown, ArchiveDetail>(`/archives/${id}`);
 };
